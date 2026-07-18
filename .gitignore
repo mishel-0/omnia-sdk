@@ -1,0 +1,9 @@
+# .omnia SDK
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.so
+build/
+dist/
+.DS_Store
