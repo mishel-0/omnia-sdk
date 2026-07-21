@@ -20,7 +20,7 @@
 
 ```bash
 # Request an evaluation build:
-# contact@omnia-sdk.com
+# misheladnan35@gmail.com
 
 # Supported platforms:
 # • Linux (Ubuntu 22.04+, RHEL 8+)
@@ -225,7 +225,7 @@ docs/
 
 ```
 Commercial licensing / Enterprise evaluation:
-contact@omnia-sdk.com
+misheladnan35@gmail.com
 ```
 
 ---
