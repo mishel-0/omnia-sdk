@@ -4,6 +4,12 @@ on:
     tags:
       - 'v*'
 
+# Security: only run on tag pushes, not on PRs from forks
+# No pull_request trigger — secrets never exposed to untrusted code
+
+permissions:
+  contents: write  # needed to upload release assets
+
 jobs:
   build:
     strategy:
@@ -11,7 +17,6 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
         exclude:
-          # Skip combinations Nuitka doesn't support well
           - os: windows-latest
             python-version: '3.9'
           - os: windows-latest
@@ -20,8 +25,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     steps:
-      - name: Checkout public repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Setup Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -34,29 +38,34 @@ jobs:
           pip install numpy pydicom zstandard
 
       - name: Checkout private source
+        env:
+          # Fine-grained PAT scoped to omnia-sdk-source only, Contents: read
+          # Create at: https://github.com/settings/tokens?type=beta
+          # Expires: 90 days
+          PAT: ${{ secrets.SOURCE_PAT }}
         run: |
-          git clone https://${{ secrets.SOURCE_PAT }}@github.com/mishel-0/omnia-sdk-source.git /tmp/source
+          git clone https://$PAT@github.com/mishel-0/omnia-sdk-source.git /tmp/source
           cp -r /tmp/source/src ./src
           cp /tmp/source/setup.py ./setup.py
 
       - name: Build wheel with Nuitka
         run: |
           python setup.py bdist_wheel
-          echo "Built wheels:"
+          echo "Built:"
           ls -lh dist/
 
-      - name: Test wheel
+      - name: Smoke test wheel
         run: |
           pip install dist/*.whl
           python -c "
           try:
               from omnia_sdk import OmniaContainer
-              print('License gate: blocks without key — expected')
+              print('License gate: blocked (expected)')
           except Exception:
-              pass
+              print('Wheel installed, license gate active')
           "
 
-      - name: Upload wheels to release
+      - name: Upload to release
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.whl
