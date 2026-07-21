@@ -34,13 +34,17 @@ jobs:
           pip install --upgrade pip setuptools wheel nuitka
           pip install numpy pydicom zstandard
 
-      - name: Fetch private source
-        env:
-          PAT: ${{ secrets.SOURCE_PAT }}
+      - name: Checkout private source
+        uses: actions/checkout@v4
+        with:
+          repository: mishel-0/omnia-sdk-source
+          token: ${{ secrets.SOURCE_PAT }}
+          path: source
+
+      - name: Copy source into build
         run: |
-          git clone https://x-access-token:$PAT@github.com/mishel-0/omnia-sdk-source.git /tmp/source
-          cp -r /tmp/source/src ./src
-          cp /tmp/source/setup.py ./setup.py
+          cp -r source/src ./src
+          cp source/setup.py ./setup.py
 
       - name: Build wheel
         run: |
