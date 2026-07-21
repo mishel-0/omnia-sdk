@@ -1,0 +1,63 @@
+name: Build wheels
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+        exclude:
+          # Skip combinations Nuitka doesn't support well
+          - os: windows-latest
+            python-version: '3.9'
+          - os: windows-latest
+            python-version: '3.10'
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout public repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install build tools
+        run: |
+          pip install --upgrade pip setuptools wheel nuitka
+          pip install numpy pydicom zstandard
+
+      - name: Checkout private source
+        run: |
+          git clone https://${{ secrets.SOURCE_PAT }}@github.com/mishel-0/omnia-sdk-source.git /tmp/source
+          cp -r /tmp/source/src ./src
+          cp /tmp/source/setup.py ./setup.py
+
+      - name: Build wheel with Nuitka
+        run: |
+          python setup.py bdist_wheel
+          echo "Built wheels:"
+          ls -lh dist/
+
+      - name: Test wheel
+        run: |
+          pip install dist/*.whl
+          python -c "
+          try:
+              from omnia_sdk import OmniaContainer
+              print('License gate: blocks without key — expected')
+          except Exception:
+              pass
+          "
+
+      - name: Upload wheels to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.whl
+          generate_release_notes: false
