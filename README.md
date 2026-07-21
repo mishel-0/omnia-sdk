@@ -4,8 +4,8 @@
 </p>
 
 <p align="center" style="font-size: 14px; color: #8899aa; max-width: 560px; line-height: 1.8;">
-  A study&rsquo;s 277 DICOM files generate 13.8 million files per dataset &mdash; and 69 million syscalls per training epoch.
-  <strong style="color: #99aabb;">.omnia proposes a single-file container that eliminates the O(n) I/O tax in medical AI pipelines.</strong>
+  A study&rsquo;s 277 DICOM files generate 3,387 files per dataset we tested. Each epoch opens, parses, reads, and closes every file.
+  <strong style="color: #99aabb;">.omnia proposes a single-file container that eliminates this per-file overhead in medical AI pipelines.</strong>
 </p>
 
 <p align="center">
@@ -44,27 +44,14 @@ omnia extract ./study.omnia ./restored/
 
 # Verify integrity (CRC check on all slices)
 omnia verify ./study.omnia
-
-# Run benchmark on your hardware
-omnia benchmark ./dataset/
 ```
 
 ```python
 from omnia import Study
 
-# Open a .omnia file
 study = Study("ct_scan.omnia")
-
-# Random access to any slice — O(1)
-slice_47 = study[47]              # numpy array, shape (512, 512)
-
-# Bulk read entire volume
-volume = study.volume()           # numpy array, shape (277, 512, 512)
-
-# Metadata
-print(study.num_slices)           # 277
-print(study.shape)                # (512, 512)
-print(study.dtype)                # int16
+slice_47 = study[47]              # O(1) random access
+volume = study.volume()           # bulk read
 ```
 
 ---
@@ -84,7 +71,7 @@ print(study.dtype)                # int16
   └────────┬─────────┘
            │
   ┌────────▼─────────┐
-  │   Offset Table    │  Build O(1) index: slice N → byte offset + CRC32
+  │   Offset Table    │  Build index: slice N → byte offset + CRC32
   └────────┬─────────┘
            │
   ┌────────▼─────────┐
@@ -100,8 +87,39 @@ print(study.dtype)                # int16
   └────────┬─────────┘
            │
            ▼
-          GPU (93% util)
+          GPU
 ```
+
+---
+
+## Benchmark
+
+Measured on: NVIDIA RTX A4000 · ResNet-18 · 3,387 real LIDC-CT slices · Batch 64 · 4 workers
+
+Two benchmarks were run:
+
+**A) Truly cold system** (first run after boot, no cached data):
+
+| Metric | Raw DICOM | .omnia |
+|--------|-----------|--------|
+| Epoch 1 (cold) | 215.8 s | 69.3 s |
+| Epoch 2 | 133.6 s | 21.9 s |
+| Epoch 3 | 95.6 s | 21.9 s |
+| Epoch 4 | 41.0 s | 21.9 s |
+| Epoch 5 | 40.9 s | 21.9 s |
+| GPU util (avg) | 29% | 80% |
+
+**B) Steady state** (100 epochs, last 50 averaged, fully cached):
+
+| Metric | Raw DICOM | .omnia |
+|--------|-----------|--------|
+| Mean epoch (last 50) | 18.1 s | 17.8 s |
+| GPU util (last 50) | 96% | 98% |
+| Storage | 1,819 MB | 837 MB |
+| Dataset load time | 127.6 s | 0.7 s |
+| Lossless verification | — | 0 errors / 3,387 slices |
+
+> **Why two tables?** The test system has 440 GB RAM. Our 1.8 GB dataset fits entirely in OS page cache after a few epochs. The steady-state numbers show that once everything is cached, both DICOM and .omnia run at similar speed. The cold-start numbers show the real-world difference: when the cache is empty (or the dataset is too large to cache), .omnia avoids the per-file overhead that slows DICOM down. For production datasets exceeding available RAM, the cold-start behavior is the dominant regime.
 
 ---
 
@@ -110,10 +128,8 @@ print(study.dtype)                # int16
 | Check | Result |
 |-------|--------|
 | **Lossless** | Byte-for-byte verified across 3,387 slices. 0 errors. |
-| **Metadata preservation** | Original DICOM tags preserved on round-trip. |
 | **CRC integrity** | Per-slice CRC32 — corruption detected on read. |
-| **Benchmark reproducibility** | Scripts and methodology included in `benchmarks/`. |
-| **Test coverage** | 6-test debug suite: DICOM reading, conversion, lossless, format header, batch, random access. |
+| **Benchmark reproducibility** | Scripts and methodology in `benchmarks/`. |
 
 ---
 
@@ -122,87 +138,45 @@ print(study.dtype)                # int16
 | Modality | Status |
 |----------|--------|
 | **CT** | ✅ Supported |
-| **MRI** | 🔄 Planned (v0.2) |
-| **PET** | 🔄 Planned (v0.3) |
-| **Ultrasound** | 🔄 Planned (v0.3) |
+| **MRI** | 🔄 Planned |
+| **PET / Ultrasound** | 🔄 Planned |
 
 ---
 
 ## FAQ
 
 ### Why not ZIP?
-ZIP requires full decompression to access a single slice. No random access. For a 277-slice study, reading slice 200 means decompressing slices 0–199 first.
+ZIP requires decompressing the entire archive to access any single slice. Reading slice 200 means decompressing slices 0-199 first.
 
 ### Why not HDF5?
-HDF5 is a general-purpose hierarchical format with no DICOM ingestion path. It requires a full pipeline rewrite. Concurrency model is fragile. Metadata overhead is significant for large studies.
+HDF5 has no DICOM ingestion path and its concurrency model is fragile under high worker counts.
 
 ### Why not Zarr?
-Zarr is designed for chunked array storage in cloud-native ML pipelines. It has no DICOM understanding — no modality tags, no study/series hierarchy, no patient metadata. Converting DICOM to Zarr discards the medical context.
+Zarr has no DICOM understanding — no modality tags, no study hierarchy, no patient metadata.
 
 ### Why not NIfTI?
-NIfTI was designed for neuroimaging (fMRI, diffusion). It stores a single 3D or 4D volume with minimal metadata. No DICOM tag preservation. Gzip compression requires full file decompression.
+NIfTI stores a single volume with minimal metadata. No DICOM tag preservation. Gzip requires full decompression.
 
 ### Why not WebDataset?
-WebDataset shards tar archives for fast I/O, but each shard is a concatenation of individual files. DICOM parsing still happens per sample. No random access within a shard.
+WebDataset shards tar files but still requires DICOM parsing per sample. No random access within a shard.
 
-### Why not JPEG 2000 (DICOM encapsulated)?
-JPEG 2000 is a per-slice codec, not a container. It does not aggregate studies. Decode at 16 ms/slice is 50× slower than the codec used in .omnia, making it unsuitable for training pipelines.
+### Why not JPEG 2000?
+JPEG 2000 per-slice decode is ~16 ms, too slow for training pipelines.
 
 ### Why not MONAI CacheDataset?
-MONAI caches decoded data in RAM. This works for small datasets (< 10 GB) but does not scale to the multi-TB archives typical in medical AI. It also does not reduce storage.
+Caches in RAM — works for datasets under 10 GB but does not scale to multi-TB archives.
 
 ### Why not NVIDIA DALI?
-DALI accelerates data loading on the GPU but has no DICOM decoder. It requires a custom preprocessing pipeline. No storage savings.
+DALI has no DICOM decoder and requires custom preprocessing operators.
 
 ### Why not AV1 / H.265?
-These are lossy video codecs. CT diagnosis requires preserving 1 HU differences — lossy quantization is unacceptable for medical use.
-
-### Why not a database (LMDB, SQLite)?
-Databases add complexity, maintenance overhead, and licensing costs. They do not inherently provide compression or DICOM-native organization. A file-based container is simpler to deploy, backup, and migrate.
-
-### Why not keep raw DICOM?
-Raw DICOM works — at the cost of 277 files per study, 69M syscalls per epoch, and 48% GPU utilization. .omnia is backward compatible: you keep your PACS, your DICOM archive, and your workflows. The container is a cache / training format, not a replacement.
-
----
-
-## Benchmark
-
-*Reproducible with `benchmarks/benchmark.py`. Full 100-epoch results in `benchmarks/benchmark.json`.*
-
-| Metric | Raw DICOM | .omnia |
-|--------|-----------|--------|
-| Mean epoch time (steady, last 50) | 18.1 s | 17.8 s |
-| Cold start (epoch 1) | 40.6 s | 21.9 s |
-| GPU utilization (steady) | 96% | 98% |
-| Storage | 1,819 MB | 837 MB |
-| Dataset load time | 127.6 s | 0.7 s |
-| System calls per epoch | ~17,000 | ~30 |
-| Lossless verification | — | 0 errors / 3,387 slices |
-
-> **Note:** The 18.1 s DICOM steady state is achieved because the 1.8 GB dataset fits entirely in the test system's 440 GB RAM. For production datasets (10 TB+) that exceed available RAM, DICOM remains in cold-start territory while .omnia maintains steady throughput regardless of dataset size. See `benchmarks/benchmark.json` for per-epoch timing and full methodology.
-
-```
-Epoch time comparison (100 epochs):
-
-DICOM:  ████████████████████████░░░░░░░░░░░░░░░░░░░░ 40.6s → 18.1s
-.omnia: ████████████████████████████████████████████ 21.9s → 17.8s
-
-GPU utilization (steady state):
-DICOM:  ████████████████████████████████████████████ 96%
-.omnia: ████████████████████████████████████████████ 98%
-
-Storage:
-DICOM:  ████████████████████████████████████████████ 1,819 MB
-.omnia: ████████████████████████████████████████████ 837 MB
-```
-
-*Hardware: NVIDIA RTX A4000 · ResNet-18 · 3,387 LIDC-CT slices · 100 epochs · Batch 64 · 4 workers*
+Lossy — not acceptable for diagnostic CT where 1 HU differences matter.
 
 ---
 
 ## Limitations
 
-- Single-series CT only. Multi-series and multi-modality studies not yet supported.
+- Single-series CT only. Multi-series and multi-modality not yet supported.
 - Not a DICOM transfer syntax — complements DICOM, does not replace it.
 - Requires custom reader — no native PACS or viewer support.
 - Research prototype. Not clinically validated. Not for diagnostic use.
@@ -215,9 +189,9 @@ DICOM:  ████████████████████████
 | Version | Focus | Status |
 |---------|-------|--------|
 | v0.1 | CT support, PyTorch Dataset, CLI, benchmark | ✅ Complete |
-| v0.2 | MRI support, streaming reads, metadata API | 🔄 Planned |
-| v0.3 | PET / Ultrasound, batch compression, encryption | 📅 Planned |
-| v1.0 | Production SDK, Windows build, PACS integration | 📅 Planned |
+| v0.2 | MRI support, streaming reads | 🔄 Planned |
+| v0.3 | PET / Ultrasound, batch compression | 📅 Planned |
+| v1.0 | Production SDK, Windows build | 📅 Planned |
 
 ---
 
@@ -225,7 +199,7 @@ DICOM:  ████████████████████████
 
 ```
 docs/
-├── container.md    — Format specification, offset table, CRC, compression pipeline
+├── container.md    — Format specification, offset table, CRC
 ├── cli.md          — Command reference
 ├── sdk.md          — Python & C SDK reference
 ├── benchmark.md    — Methodology, reproduction guide
@@ -237,13 +211,11 @@ docs/
 ## Changelog
 
 ### v0.1.0-alpha (2026-07-21)
-- Initial research prototype
 - CT study compression and decompression
 - PyTorch Dataset for training pipelines
-- CLI (`compress`, `extract`, `verify`, `benchmark`)
+- CLI (compress, extract, verify)
 - Per-slice CRC32 integrity verification
-- 100-epoch benchmark on real LIDC data
-- Reproducible benchmark suite
+- Benchmark suite on real LIDC data
 
 ---
 
