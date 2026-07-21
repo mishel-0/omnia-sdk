@@ -109,9 +109,8 @@ Vilnius, Lithuania.
 
 <div align="center">
   <sub>
-    <a href="./LICENSE">MIT License</a> · 
     Vilnius, Lithuania 🇱🇹
   </sub>
   <br/>
-  <sub>© 2026 Mishel Adnan</sub>
+  <sub>© 2026 Mishel Adnan. All rights reserved.</sub>
 </div>
