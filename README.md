@@ -1,13 +1,13 @@
 <p align="center">
   <br/>
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0a1628,100:0d1b2a&height=340&section=header&text=.omnia&fontSize=70&fontColor=0066CC&animation=fadeIn&desc=a%20container%20format%20for%20medical%20imaging&descSize=13&descColor=667788&descAlignY=70" width="100%"/>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0a1628,100:0d1b2a&height=340&section=header&text=.omnia&fontSize=70&fontColor=0066CC&animation=fadeIn&desc=a%20container%20format%20%E2%80%94%20medical%20imaging&descSize=13&descColor=667788&descAlignY=70" width="100%"/>
 </p>
 
 <br/>
 
-<p align="center" style="font-size: 14px; color: #778899; max-width: 520px; line-height: 1.7;">
-  277 DICOM files per study. 13.8 million files per dataset. 69 million syscalls per epoch.
-  <strong style="color: #99aabb;">This work proposes a single-file container that eliminates the O(n) I/O tax in medical AI training pipelines.</strong>
+<p align="center" style="font-size: 14px; color: #8899aa; max-width: 560px; line-height: 1.8;">
+  A study&rsquo;s 277 DICOM files generate 13.8 million files per dataset &mdash; and 69 million syscalls per training epoch.
+  <strong style="color: #99aabb;">.omnia proposes a single-file container that eliminates the O(n) I/O tax in medical AI pipelines.</strong>
 </p>
 
 <br/>
