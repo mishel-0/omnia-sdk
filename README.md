@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://img.shields.io/badge/status-research--prototype-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/status-research--prototype-0066CC?style=flat-square&labelColor=0a1628" alt="Status"></a>
   <a href="https://img.shields.io/badge/license-proprietary-445566?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/license-proprietary-445566?style=flat-square&labelColor=0a1628" alt="License"></a>
-  <a href="https://img.shields.io/badge/version-1.1.0-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/version-1.1.0-0066CC?style=flat-square&labelColor=0a1628" alt="Version"></a>
+  <a href="https://img.shields.io/badge/version-1.1.2-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/version-1.1.2-0066CC?style=flat-square&labelColor=0a1628" alt="Version"></a>
 </p>
 
 ---
@@ -19,15 +19,27 @@
 ## Installation
 
 ```bash
-pip install https://github.com/mishel-0/omnia-sdk/releases/download/v1.1.1/omnia_sdk-1.1.0-py3-none-any.whl
+pip install https://github.com/mishel-0/omnia-sdk/releases/download/v1.1.2/omnia_sdk-1.1.2-py3-none-any.whl
 ```
 
-A license key is required. Contact **misheladnan35@gmail.com** to request one.
+## License
+
+A license key is required. Generate one instantly (no account, no email):
 
 ```bash
-mkdir -p ~/.omnia
-echo "your-license-key" > ~/.omnia/license.key
+# Download the key generator
+curl -O https://raw.githubusercontent.com/mishel-0/omnia-sdk/main/gen_key.py
+
+# Generate a key valid for 365 days
+python3 gen_key.py
+
+# Activate
+mkdir -p ~/.omnia && echo "your-key-here" > ~/.omnia/license.key
 ```
+
+The key expires 365 days from the date it was generated. After expiry, run `gen_key.py` again for a new key.
+
+For commercial licensing: **misheladnan35@gmail.com**
 
 ---
 
@@ -155,26 +167,40 @@ Each slice independently addressable via the offset table. Accessing slice 147 d
 
 Measured on: NVIDIA RTX A4000 · ResNet-18 · 3,387 real LIDC-CT slices · Batch 64 · 4 workers
 
-### Cold start (cache empty — real-world scenario for large datasets)
+### GPU utilization
+
+```
+Epoch  DICOM  .omnia
+─────────────────────
+ 1      ████░░░░░  9%   ████████████░░ 31%
+ 2      ███████░░ 17%   ████████████████████████████████░░ 89%
+ 3      ██████████ 24%   ████████████████████████████████████████ 95%
+ 4      ██████████████████ 44%   ████████████████████████████████████████ 95%
+ 5      ████████████████████ 52%   ██████████████████████████████████████ 91%
+```
+
+DICOM averages **29% GPU utilization**. .omnia averages **80% GPU utilization**.
+The GPU feeds on DICOM's idle time — 3,387 file opens per epoch keep the CPU busy, not the GPU.
+
+### Cold start (cache empty)
+
+| Epoch | Raw DICOM | .omnia |
+|-------|-----------|--------|
+| 1 | 215.8 s | 69.3 s |
+| 2 | 133.6 s | 21.9 s |
+| 3 | 95.6 s | 21.9 s |
+| 4 | 41.0 s | 21.9 s |
+| 5 | 40.9 s | 21.9 s |
+
+### Steady state (100 epochs, last 50 averaged)
 
 | Metric | Raw DICOM | .omnia |
 |--------|-----------|--------|
-| Epoch 1 | 215.8 s | 69.3 s |
-| Epoch 2 | 133.6 s | 21.9 s |
-| Epoch 3 | 95.6 s | 21.9 s |
-| Epoch 4 | 41.0 s | 21.9 s |
-| Epoch 5 | 40.9 s | 21.9 s |
-| GPU util (avg) | 29% | 80% |
-
-### Steady state (100 epochs, last 50 averaged, fully cached)
-
-| Metric | Raw DICOM | .omnia |
-|--------|-----------|--------|
-| Mean epoch (last 50) | 18.1 s | 17.8 s |
-| GPU util (last 50) | 96% | 98% |
+| Mean epoch | 18.1 s | 17.8 s |
+| GPU utilization | 96% | 98% |
 | Storage | 1,819 MB | 837 MB |
-| Dataset load time | 127.6 s | 0.7 s |
-| Lossless verification | — | 0 errors / 3,387 slices |
+| Dataset load | 127.6 s | 0.7 s |
+| Lossless | — | 0 errors / 3,387 slices |
 
 > **Why two tables?** The test system has 440 GB RAM. Our 1.8 GB dataset fits entirely in OS page cache after a few epochs. The steady-state numbers show that once everything is cached, both run at similar speed. The cold-start numbers show the real-world difference when the cache is empty. For production datasets exceeding available RAM, cold-start behavior is the dominant regime.
 
