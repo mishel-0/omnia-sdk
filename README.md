@@ -3,81 +3,117 @@
 **One file instead of 277. Lossless. 2x faster training.**
 
 ```bash
-pip install pydicom zstd torch torchvision numpy
-python omnia_sdk/convert.py ./raw_dicom/ ./compressed/
+pip install "omnia-sdk[ml] @ git+https://github.com/mishel-0/omnia-sdk.git"
 ```
 
-Then in your training loop:
+---
+
+## Quick Start — 5 Minutes
+
+### 1. Convert your DICOM studies to .omnia
+
+```bash
+python -m omnia_sdk.convert /path/to/raw_dicom/ /path/to/compressed/
+```
+
+This takes a folder of DICOM studies like:
+
+```
+raw_dicom/
+├── LIDC-IDRI-0001/
+│   ├── slice_001.dcm
+│   ├── slice_002.dcm
+│   └── ... (277 files)
+├── LIDC-IDRI-0002/
+│   └── ...
+```
+
+And outputs:
+
+```
+compressed/
+├── LIDC-IDRI-0001.omnia   ← 1 file replaces 277
+├── LIDC-IDRI-0002.omnia
+└── conversion_summary.json
+```
+
+**Result:** ~2.17x lossless compression. 0 pixel loss. Verified.
+
+### 2. Train your model with .omnia
 
 ```python
 from omnia_sdk.dataset import OmniaDataset
 from torch.utils.data import DataLoader
 
-ds = OmniaDataset("./compressed/")
-loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=4)
+# Same as DICOM — just point to your .omnia folder
+ds = OmniaDataset("/path/to/compressed/")
+
+loader = DataLoader(
+    ds,
+    batch_size=64,
+    shuffle=True,
+    num_workers=4,
+    pin_memory=True,
+    persistent_workers=True,
+    prefetch_factor=2,
+)
+
 for images, labels in loader:
-    # images: [B, 1, 512, 512] — same pixels, just faster
-    ...
+    # images shape: [B, 1, 512, 512]
+    # Same pixels as DICOM — identical loss curve
+    output = model(images)
+    loss = criterion(output, labels)
 ```
 
-## Why
-
-Every CT study is stored as **277 separate DICOM files**. Training a model means opening and parsing all 277 files every epoch. The GPU sits idle at **48% utilization** waiting on file I/O.
-
-.omnia bundles each study into **1 file** with Zstd compression and persistent handle access. GPU utilization jumps to **93%**. Training finishes **1.87x faster**.
-
-## Benchmark (ResNet-18, 3,387 CT slices, RTX A4000)
-
-| Metric | Raw DICOM | .omnia Zstd |
-|--------|-----------|-------------|
-| Epoch time | 40.9s | **21.9s** |
-| GPU utilization | 48% | **93%** |
-| Dataset load | 127.6s | **0.7s** |
-| Storage | 1,819 MB | **837 MB (2.17x)** |
-| Lossless | — | ✅ 0 errors / 3,387 slices |
-
-## Format
-
-```
-[OMN2:4][VER:1][CODEC:1][RSV:2]
-[META_SIZE:8][zstd(JSON metadata)]
-[CRC:4+zstd(slice_0)]...[CRC:4+zstd(slice_N)]
-```
-
-- Open specification: `FORMAT_SPEC.md`
-- Codec: Zstd (ISO standard)
-- Lossless: CRC32 verified per slice
-- License: MIT
-
-## SDK Structure
-
-```
-├── src/
-│   ├── container.py      ← .omnia read/write (Zstd, CRC-verified)
-│   ├── convert.py         ← DICOM → .omnia batch converter
-│   └── dataset.py         ← PyTorch Dataset
-├── benchmarks/            ← Reproducible benchmark scripts
-├── FORMAT_SPEC.md         ← Open format specification
-└── requirements.txt       ← pip install
-```
-
-## Quick Start
+### 3. Compare the difference
 
 ```bash
-# Convert DICOM studies to .omnia
-python omnia_sdk/convert.py /path/to/lidc_raw/ /path/to/output/
-
-# Verify conversion
-python benchmarks/debug_test.py
-
-# Run benchmark
-python benchmarks/bench_resnet.py /path/to/lidc_raw /path/to/output/
+# Benchmark DICOM vs .omnia on your data
+python benchmarks/bench_training.py /path/to/raw_dicom/ /path/to/compressed/
 ```
-
-## License
-
-MIT — free for any use. The format is open. The code is reference. Build your own tools on top.
 
 ---
 
-Built at **Vilnius Gediminas Technical University (VGTU)** — Vilnius, Lithuania
+## What changed?
+
+| | Before (DICOM) | After (.omnia) |
+|---|---|---|
+| Files per study | 277 | **1** |
+| Dataset loading | 127 seconds | **0.7 seconds** |
+| GPU utilization | 48% | **93%** |
+| Epoch time | 40.9s | **21.9s (1.87x faster)** |
+| Storage | 1,819 MB | **837 MB (2.17x less)** |
+| Pixel quality | — | ✅ Lossless (0 errors) |
+
+## How it works
+
+.omnia bundles all slices of a CT study into a single Zstd-compressed file with a pre-computed offset table. Any slice can be read in O(1) time — seek to offset, decompress 0.3ms, done. No full-file decompression, no header parsing per slice, no repeated open/close system calls.
+
+## File format
+
+```
+[OMN2:4][VERSION:1][CODEC:1][RESERVED:2]
+[META_SIZE:8][zstd(JSON metadata with offsets, shapes, CRC)]
+[CRC:4+zstd(slice_0)] [CRC:4+zstd(slice_1)] ... [CRC:4+zstd(slice_N)]
+```
+
+Each slice chunk has its own CRC32 checksum for corruption detection. The format spec is at `FORMAT_SPEC.md` — open, no proprietary encoding.
+
+## Verified on real hardware
+
+| Hardware | Setup | Speedup |
+|----------|-------|---------|
+| RTX A4000 | 3,387 slices, ResNet-18 | **1.87x** |
+| 100 epochs | Full training run | **46% time saved** |
+| Cold start | First epoch, no cache | **3.11x faster** |
+
+## Requirements
+
+- Python 3.9+
+- `pip install pydicom zstd numpy` (or `pip install "omnia-sdk[ml]"` for PyTorch)
+
+---
+
+Built at **Vilnius Gediminas Technical University (VGTU)** — Vilnius, Lithuania  
+License: MIT — free for any use.  
+```
