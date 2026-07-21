@@ -77,12 +77,22 @@ def convert_study(dicom_dir: Path, out_dir: Path, verbose: bool = True) -> dict:
 
 
 def main():
-    if len(sys.argv) < 3:
-        print("Usage: python3 convert.py <raw_dicom_dir/> <output_dir/>")
+    import sys
+    if len(sys.argv) < 2:
+        print("Usage: python -m omnia_sdk.convert <raw_dicom_dir/> <output_dir/>")
         sys.exit(1)
+    run(Path(sys.argv[1]), Path(sys.argv[2]) if len(sys.argv) > 2 else None)
 
-    raw_dir = Path(sys.argv[1])
-    out_dir = Path(sys.argv[2])
+
+def run(raw_dir: Path, out_dir: Path = None) -> list[dict]:
+    """Programmatic API: convert DICOM studies to .omnia.
+    
+    Args:
+        raw_dir: Path to directory containing DICOM study folders
+        out_dir: Output directory (defaults to raw_dir.parent / (raw_dir.name + '_compressed'))
+    """
+    if out_dir is None:
+        out_dir = raw_dir.parent / (raw_dir.name + "_compressed")
     out_dir.mkdir(parents=True, exist_ok=True)
 
     studies = sorted([d for d in raw_dir.iterdir() if d.is_dir()])

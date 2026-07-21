@@ -1,6 +1,6 @@
 # .omnia SDK
 
-**Train 2x faster on CT scans. One file instead of 277. Lossless.**
+**Train 2x faster on CT scans. One file instead of 277.**
 
 ```bash
 pip install "omnia-sdk[ml] @ git+https://github.com/mishel-0/omnia-sdk.git"
@@ -10,13 +10,13 @@ pip install "omnia-sdk[ml] @ git+https://github.com/mishel-0/omnia-sdk.git"
 
 ## Usage
 
-**1. Compress your DICOM folder:**
+**1. Compress:**
 
 ```bash
-python -m omnia_sdk.convert ./ct_scans/ ./compressed/
+omnia compress ./ct_scans/ ./compressed/
 ```
 
-**2. Train with it:**
+**2. Train:**
 
 ```python
 from omnia_sdk.dataset import OmniaDataset
@@ -24,18 +24,30 @@ from torch.utils.data import DataLoader
 
 ds = OmniaDataset("./compressed/")
 loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=4)
-
 for images, labels in loader:
-    out = model(images)  # same pixels, faster
+    out = model(images)  # same pixels, 2x faster
 ```
 
-**3. Done.** Epochs go from 40s → 22s. GPU goes from 48% → 93%.
+**3. Done.** Epochs go 40s → 22s. GPU 48% → 93%.
 
 ---
 
+## CLI
+
+```bash
+# Convert DICOM to .omnia
+omnia compress ./ct_scans/ ./compressed/
+
+# Show file info
+omnia info ./study.omnia
+
+# Verify all slices (CRC check)
+omnia verify ./study.omnia
+```
+
 ## Why
 
-Every CT study is stored as 277 files. Opening them all every epoch keeps the GPU waiting. .omnia bundles each study into one Zstd file — one open, one seek, 0.3ms decompress. Your GPU stops waiting.
+277 files per study → 1 file. Persistent handle, no open/close per slice. GPU stops waiting.
 
 ## Benchmark
 
@@ -45,10 +57,9 @@ Every CT study is stored as 277 files. Opening them all every epoch keeps the GP
 | GPU util | 48% | **93%** |
 | Storage | 1,819 MB | **837 MB** |
 | Load time | 127s | **0.7s** |
-| Quality | — | ✅ lossless |
 
-*ResNet-18, 3,387 CT slices, RTX A4000. Full results in `benchmarks/`.*
+*ResNet-18, 3,387 CT slices, RTX A4000. 100 epochs verified.*
 
 ---
 
-Built at **VGTU** — Vilnius, Lithuania · MIT license
+VGTU · Vilnius · MIT

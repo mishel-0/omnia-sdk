@@ -13,6 +13,11 @@ setup(
     author_email="mishel@example.com",
     url="https://github.com/mishel-0/omnia-sdk",
     packages=find_packages(),
+    entry_points={
+        "console_scripts": [
+            "omnia=omnia_sdk.cli:main",
+        ],
+    },
     python_requires=">=3.9",
     install_requires=[
         "pydicom>=3.0",
