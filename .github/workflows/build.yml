@@ -47,11 +47,13 @@ jobs:
           cp source/setup.py ./setup.py
 
       - name: Build wheel
+        shell: bash
         run: |
           python setup.py bdist_wheel
           ls -lh dist/
 
       - name: Smoke test
+        shell: bash
         run: |
           pip install dist/*.whl
           python -c "
