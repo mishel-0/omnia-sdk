@@ -1,5 +1,0 @@
-pydicom>=3.0
-zstd>=1.5
-torch>=2.0
-torchvision>=0.15
-numpy>=1.24
