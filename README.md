@@ -1,21 +1,20 @@
 <p align="center">
   <br/><br/><br/>
-  <span style="font-size: 64px; font-weight: 700; color: #0066CC; letter-spacing: -2px;">.omnia</span>
+  <span style="font-size: 56px; font-weight: 300; color: #0066CC; letter-spacing: -1px;">.omnia</span>
   <br/><br/>
-  <span style="font-size: 18px; color: #8899aa; letter-spacing: 1px;">Medical Image Container for AI</span>
+  <span style="font-size: 16px; color: #778899; letter-spacing: 2px; font-weight: 400;">A Container Format for Medical Imaging</span>
   <br/><br/><br/>
 </p>
 
-<p align="center">
-  277 DICOM files → <strong>1</strong>. &nbsp; Training <strong>1.87× faster</strong>. &nbsp; GPU <strong>48% → 93%</strong>. &nbsp; Storage <strong>2.17× less</strong>.
+<p align="center" style="font-size: 14px; color: #8899aa; max-width: 600px;">
+  .omnia bundles CT studies into single files while preserving lossless quality.
+  The project investigates whether consolidating 277 DICOM files per study
+  into one container reduces I/O overhead in AI training pipelines.
 </p>
 
 <br/>
 
 <p align="center">
-  <a href="https://img.shields.io/badge/training-1.87×_faster-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/training-1.87×_faster-0066CC?style=flat-square&labelColor=0a1628" alt="Training"></a>
-  <a href="https://img.shields.io/badge/gpu-93%25-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/gpu-93%25-0066CC?style=flat-square&labelColor=0a1628" alt="GPU"></a>
-  <a href="https://img.shields.io/badge/storage-2.17×-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/storage-2.17×-0066CC?style=flat-square&labelColor=0a1628" alt="Storage"></a>
   <a href="https://img.shields.io/badge/license-proprietary-445566?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/license-proprietary-445566?style=flat-square&labelColor=0a1628" alt="License"></a>
 </p>
 
@@ -25,61 +24,42 @@
 
 <br/>
 
-## Install
+## Abstract
 
-```bash
-pip install omnia-sdk
-```
+DICOM stores each CT slice as a separate file. A single study routinely produces 277 files, and a training dataset of 50,000 studies represents roughly 13.8 million files. Each training epoch opens, reads, and closes every file — incurring millions of system calls for metadata alone. This work proposes a container format that collates all slices into a single file with a precomputed offset table, enabling O(1) random access to any slice without per-file overhead.
 
 <br/>
 
-## Usage
+## Method
 
-```bash
-.omnia convert ./ct_scans/ ./compressed/
-```
-
-```python
-from omnia_sdk.dataset import OmniaDataset
-from torch.utils.data import DataLoader
-
-ds = OmniaDataset("./compressed/")
-loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=4)
-
-for images, labels in loader:
-    out = model(images)
-```
+The container stores compressed slice data sequentially with an index of byte offsets. At training time, files are opened once and held; individual slices are retrieved by seeking to their offset and decompressing. No per-slice file operations or DICOM header parsing occurs after initial loading.
 
 <br/>
 
-## Why .omnia is faster
+## Benchmark
 
-DICOM stores every CT slice as a separate file. Training on 50,000 studies means **13.8 million files**.
+*ResNet‑18 · 3,387 real CT slices · NVIDIA RTX A4000 · 100 epochs*
 
-Each epoch opens, parses, reads, and closes every file — **69 million syscalls**. The CPU spends more time managing file handles than feeding the GPU. GPU utilization stalls at **48%**.
-
-.omnia bundles each study into one file with a precomputed offset table. Files open once and stay open. A slice is a single seek plus a fast decompress — under a millisecond. GPU utilization reaches **93%**.
-
-<p align="center">
-  <br/>
-  13.8M files → 50K files &nbsp;·&nbsp; 69M syscalls → 50K syscalls &nbsp;·&nbsp; 127s load → 0.7s load
-  <br/><br/>
-</p>
+| Metric | Raw DICOM | .omnia |
+|--------|-----------|--------|
+| Mean epoch time | 40.9 s | 21.9 s |
+| GPU utilization | 48% | 93% |
+| Storage volume | 1,819 MB | 837 MB |
+| Dataset load time | 127.6 s | 0.7 s |
+| Cold start (epoch 1) | 215.8 s | 69.3 s |
+| Lossless verification | — | 0 errors / 3,387 slices |
 
 <br/>
 
-## Results
+## Related work
 
-| | Raw DICOM | .omnia |
-|---|---|---|
-| Steady epoch | 40.9 s | **21.9 s** |
-| GPU utilization | 48% | **93%** |
-| Storage | 1,819 MB | **837 MB** |
-| Dataset loading | 127.6 s | **0.7 s** |
-| Cold epoch | 215.8 s | **69.3 s** |
-| Lossless | — | ✅ Verified |
+Conventional approaches (multi-page TIFF, NIfTI, ZIP archives) either lack random access or require full decompression. Video codecs offer high ratios but introduce loss. DICOM's own transfer syntaxes are limited to single-file contexts and do not address study-level aggregation.
 
-<sub>ResNet‑18 · 3,387 real CT slices · RTX A4000 · 100 epochs</sub>
+<br/>
+
+## Status
+
+Research prototype. Licensed under proprietary terms.
 
 <br/>
 
@@ -88,7 +68,7 @@ Each epoch opens, parses, reads, and closes every file — **69 million syscalls
 <br/>
 
 <p align="center">
-  <span style="font-size: 13px; color: #556677;">Proprietary — All rights reserved.</span>
+  <span style="font-size: 12px; color: #556677;">© 2026 — All rights reserved.</span>
 </p>
 
 <br/><br/><br/>
