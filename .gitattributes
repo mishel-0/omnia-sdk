@@ -1,3 +1,0 @@
-*.md linguist-detectable=true
-*.py linguist-detectable=true
-*.json export-ignore
