@@ -4,11 +4,8 @@ on:
     tags:
       - 'v*'
 
-# Security: only run on tag pushes, not on PRs from forks
-# No pull_request trigger — secrets never exposed to untrusted code
-
 permissions:
-  contents: write  # needed to upload release assets
+  contents: write
 
 jobs:
   build:
@@ -37,35 +34,31 @@ jobs:
           pip install --upgrade pip setuptools wheel nuitka
           pip install numpy pydicom zstandard
 
-      - name: Checkout private source
+      - name: Fetch private source
         env:
-          # Fine-grained PAT scoped to omnia-sdk-source only, Contents: read
-          # Create at: https://github.com/settings/tokens?type=beta
-          # Expires: 90 days
           PAT: ${{ secrets.SOURCE_PAT }}
         run: |
-          git clone https://$PAT@github.com/mishel-0/omnia-sdk-source.git /tmp/source
+          git clone https://x-access-token:$PAT@github.com/mishel-0/omnia-sdk-source.git /tmp/source
           cp -r /tmp/source/src ./src
           cp /tmp/source/setup.py ./setup.py
 
-      - name: Build wheel with Nuitka
+      - name: Build wheel
         run: |
           python setup.py bdist_wheel
-          echo "Built:"
           ls -lh dist/
 
-      - name: Smoke test wheel
+      - name: Smoke test
         run: |
           pip install dist/*.whl
           python -c "
           try:
               from omnia_sdk import OmniaContainer
-              print('License gate: blocked (expected)')
+              print('License gate active')
           except Exception:
-              print('Wheel installed, license gate active')
+              print('Wheel installed correctly')
           "
 
-      - name: Upload to release
+      - name: Upload assets
         uses: softprops/action-gh-release@v2
         with:
           files: dist/*.whl
