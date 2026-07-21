@@ -1,14 +1,13 @@
 <p align="center">
-  <br/><br/>
-  <code style="background: #0a1628; padding: 20px 40px; border-radius: 12px; border: 1px solid #1a2a3e; font-size: 48px; color: #0066CC; letter-spacing: 4px; font-weight: 300;">.omnia</code>
-  <br/><br/>
-  <span style="font-size: 15px; color: #667788; letter-spacing: 6px; font-weight: 300;">A CONTAINER FORMAT FOR MEDICAL IMAGING</span>
-  <br/><br/><br/>
+  <br/>
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0a1628,100:0d1b2a&height=280&section=header&text=.omnia&fontSize=70&fontColor=0066CC&animation=fadeIn&desc=A%20CONTAINER%20FORMAT%20FOR%20MEDICAL%20IMAGING&descSize=14&descColor=667788&descAlignY=60" width="100%"/>
 </p>
+
+<br/>
 
 <p align="center" style="font-size: 14px; color: #778899; max-width: 520px; line-height: 1.7;">
   277 DICOM files per study. 13.8 million files per dataset. 69 million syscalls per epoch.
-  <strong style="color: #99aabb;">This work proposes a single-file container that eliminates the O(n) I/O tax.</strong>
+  <strong style="color: #99aabb;">This work proposes a single-file container that eliminates the O(n) I/O tax in medical AI training pipelines.</strong>
 </p>
 
 <br/>
@@ -70,7 +69,7 @@ The container is a single file with three regions:
 └─────────────────────────────────────────────┘
 ```
 
-Each slice is independently addressable via the offset table. Accessing slice 147 does not require decompressing slices 0–146. There is no full-file extraction step. The offset table is loaded once at open time and kept in memory.
+Each slice is independently addressable via the offset table. Accessing slice 147 does not require decompressing slices 0–146. There is no full-file extraction step.
 
 ---
 
