@@ -4,13 +4,13 @@
 
 ```bash
 pip install pydicom zstd torch torchvision numpy
-python src/convert.py ./raw_dicom/ ./compressed/
+python omnia_sdk/convert.py ./raw_dicom/ ./compressed/
 ```
 
 Then in your training loop:
 
 ```python
-from src.dataset import OmniaDataset
+from omnia_sdk.dataset import OmniaDataset
 from torch.utils.data import DataLoader
 
 ds = OmniaDataset("./compressed/")
@@ -65,7 +65,7 @@ Every CT study is stored as **277 separate DICOM files**. Training a model means
 
 ```bash
 # Convert DICOM studies to .omnia
-python src/convert.py /path/to/lidc_raw/ /path/to/output/
+python omnia_sdk/convert.py /path/to/lidc_raw/ /path/to/output/
 
 # Verify conversion
 python benchmarks/debug_test.py

@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 import torchvision.models as models
 import pydicom
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "omnia_sdk"))
 from container import OmniaContainer
 from dataset import DicomDataset, OmniaDataset
 

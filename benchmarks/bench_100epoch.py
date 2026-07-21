@@ -11,7 +11,7 @@ import torch.nn as nn
 from torch.utils.data import DataLoader
 import torchvision.models as models
 
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "src"))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "omnia_sdk"))
 from dataset import DicomDataset, OmniaDataset
 
 BATCH = 64
