@@ -19,7 +19,7 @@
 ## Installation
 
 ```bash
-pip install https://github.com/mishel-0/omnia-sdk/releases/download/v1.1.0/omnia_sdk-1.1.0-py3-none-any.whl
+pip install https://github.com/mishel-0/omnia-sdk/releases/download/v1.1.1/omnia_sdk-1.1.0-py3-none-any.whl
 ```
 
 A license key is required. Contact **misheladnan35@gmail.com** to request one.
