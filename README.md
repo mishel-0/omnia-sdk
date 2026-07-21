@@ -1,6 +1,6 @@
-# .omnia SDK — Medical Image Container for AI Training
+# .omnia SDK
 
-**One file instead of 277. Lossless. 2x faster training.**
+**Train 2x faster on CT scans. One file instead of 277. Lossless.**
 
 ```bash
 pip install "omnia-sdk[ml] @ git+https://github.com/mishel-0/omnia-sdk.git"
@@ -8,112 +8,47 @@ pip install "omnia-sdk[ml] @ git+https://github.com/mishel-0/omnia-sdk.git"
 
 ---
 
-## Quick Start — 5 Minutes
+## Usage
 
-### 1. Convert your DICOM studies to .omnia
+**1. Compress your DICOM folder:**
 
 ```bash
-python -m omnia_sdk.convert /path/to/raw_dicom/ /path/to/compressed/
+python -m omnia_sdk.convert ./ct_scans/ ./compressed/
 ```
 
-This takes a folder of DICOM studies like:
-
-```
-raw_dicom/
-├── LIDC-IDRI-0001/
-│   ├── slice_001.dcm
-│   ├── slice_002.dcm
-│   └── ... (277 files)
-├── LIDC-IDRI-0002/
-│   └── ...
-```
-
-And outputs:
-
-```
-compressed/
-├── LIDC-IDRI-0001.omnia   ← 1 file replaces 277
-├── LIDC-IDRI-0002.omnia
-└── conversion_summary.json
-```
-
-**Result:** ~2.17x lossless compression. 0 pixel loss. Verified.
-
-### 2. Train your model with .omnia
+**2. Train with it:**
 
 ```python
 from omnia_sdk.dataset import OmniaDataset
 from torch.utils.data import DataLoader
 
-# Same as DICOM — just point to your .omnia folder
-ds = OmniaDataset("/path/to/compressed/")
-
-loader = DataLoader(
-    ds,
-    batch_size=64,
-    shuffle=True,
-    num_workers=4,
-    pin_memory=True,
-    persistent_workers=True,
-    prefetch_factor=2,
-)
+ds = OmniaDataset("./compressed/")
+loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=4)
 
 for images, labels in loader:
-    # images shape: [B, 1, 512, 512]
-    # Same pixels as DICOM — identical loss curve
-    output = model(images)
-    loss = criterion(output, labels)
+    out = model(images)  # same pixels, faster
 ```
 
-### 3. Compare the difference
-
-```bash
-# Benchmark DICOM vs .omnia on your data
-python benchmarks/bench_training.py /path/to/raw_dicom/ /path/to/compressed/
-```
+**3. Done.** Epochs go from 40s → 22s. GPU goes from 48% → 93%.
 
 ---
 
-## What changed?
+## Why
 
-| | Before (DICOM) | After (.omnia) |
-|---|---|---|
-| Files per study | 277 | **1** |
-| Dataset loading | 127 seconds | **0.7 seconds** |
-| GPU utilization | 48% | **93%** |
-| Epoch time | 40.9s | **21.9s (1.87x faster)** |
-| Storage | 1,819 MB | **837 MB (2.17x less)** |
-| Pixel quality | — | ✅ Lossless (0 errors) |
+Every CT study is stored as 277 files. Opening them all every epoch keeps the GPU waiting. .omnia bundles each study into one Zstd file — one open, one seek, 0.3ms decompress. Your GPU stops waiting.
 
-## How it works
+## Benchmark
 
-.omnia bundles all slices of a CT study into a single Zstd-compressed file with a pre-computed offset table. Any slice can be read in O(1) time — seek to offset, decompress 0.3ms, done. No full-file decompression, no header parsing per slice, no repeated open/close system calls.
+| Metric | DICOM | .omnia |
+|--------|-------|--------|
+| Epoch | 40.9s | **21.9s** |
+| GPU util | 48% | **93%** |
+| Storage | 1,819 MB | **837 MB** |
+| Load time | 127s | **0.7s** |
+| Quality | — | ✅ lossless |
 
-## File format
-
-```
-[OMN2:4][VERSION:1][CODEC:1][RESERVED:2]
-[META_SIZE:8][zstd(JSON metadata with offsets, shapes, CRC)]
-[CRC:4+zstd(slice_0)] [CRC:4+zstd(slice_1)] ... [CRC:4+zstd(slice_N)]
-```
-
-Each slice chunk has its own CRC32 checksum for corruption detection. The format spec is at `FORMAT_SPEC.md` — open, no proprietary encoding.
-
-## Verified on real hardware
-
-| Hardware | Setup | Speedup |
-|----------|-------|---------|
-| RTX A4000 | 3,387 slices, ResNet-18 | **1.87x** |
-| 100 epochs | Full training run | **46% time saved** |
-| Cold start | First epoch, no cache | **3.11x faster** |
-
-## Requirements
-
-- Python 3.9+
-- `pip install pydicom zstd numpy` (or `pip install "omnia-sdk[ml]"` for PyTorch)
+*ResNet-18, 3,387 CT slices, RTX A4000. Full results in `benchmarks/`.*
 
 ---
 
-Built at **Vilnius Gediminas Technical University (VGTU)** — Vilnius, Lithuania  
-License: MIT — free for any use.  
-```
+Built at **VGTU** — Vilnius, Lithuania · MIT license
