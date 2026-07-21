@@ -182,7 +182,9 @@ Epoch  DICOM  .omnia
 DICOM averages **29% GPU utilization**. .omnia averages **80% GPU utilization**.
 The GPU feeds on DICOM's idle time — 3,387 file opens per epoch keep the CPU busy, not the GPU.
 
-### Cold start (cache empty)
+### Cold start — real-world behavior
+
+This is the honest benchmark. System cold, caches empty, no shortcuts.
 
 | Epoch | Raw DICOM | .omnia |
 |-------|-----------|--------|
@@ -192,12 +194,13 @@ The GPU feeds on DICOM's idle time — 3,387 file opens per epoch keep the CPU b
 | 4 | 41.0 s | 21.9 s |
 | 5 | 40.9 s | 21.9 s |
 
-### Steady state (100 epochs, last 50 averaged)
+### Steady state — fully cached (1.8 GB dataset in 440 GB RAM)
+
+Only relevant when the entire dataset fits in RAM. Since production datasets routinely exceed available memory, the cold-start numbers above are the dominant regime.
 
 | Metric | Raw DICOM | .omnia |
 |--------|-----------|--------|
 | Mean epoch | 18.1 s | 17.8 s |
-| GPU utilization | 96% | 98% |
 | Storage | 1,819 MB | 837 MB |
 | Dataset load | 127.6 s | 0.7 s |
 | Lossless | — | 0 errors / 3,387 slices |
