@@ -1,8 +1,8 @@
 # omnia-sdk
 
 **The data layer for tile-based whole-slide-image training.**
-**35x faster data feeding than openslide, 7.8x faster end-to-end training on a T4 —
-and we show you exactly when that's true.**
+**2.5x faster than NVIDIA cuCIM at loading a cohort into RAM, 2.9x smaller on
+disk — and we show you exactly where it wins and where it loses.**
 
 ## The honest headline
 
@@ -11,6 +11,13 @@ tile-based classification (Gleason grading, detection, PANDA-style models on
 ResNet/EfficientNet-class architectures). On that workload, openslide keeps
 your GPU at ~21% utilization while it decodes JPEG-2000 every epoch.
 omnia-sdk preloads once and feeds the GPU at ~97-100%.
+
+The multipliers in the table below are **against openslide**, because that is
+what most pipelines still use. If you already run cuCIM your baseline is far
+higher and the honest number is **2.5x**, not 15-25x — see
+[Against cuCIM](#against-cucim-not-just-openslide). The large numbers here are
+real but they measure the distance from the slowest common starting point, not
+from the best available alternative.
 
 | Regime (full-train speedup) | Typical workload | Data feeding | End-to-end epoch |
 |---|---|---|---|
@@ -40,6 +47,48 @@ slide (CMU-1, 46,000 x 32,914 px), ResNet-18, batch 64, 1,485 tiles/epoch,
 | Data loading | 18.46s (97.6%) | 0.52s (10.2%) | **35.2x** |
 | On disk | 177.6 MB | 61.1 MB | 2.9x smaller |
 | Preload (one-off) | — | 1.0s | repaid in 0.1 epochs |
+
+### Against cuCIM, not just openslide
+
+openslide is the wrong baseline to judge this on. Anyone doing serious WSI
+training already uses [cuCIM](https://github.com/rapidsai/cucim), NVIDIA's
+GPU-accelerated image I/O library. It is free, actively developed, and reads
+`.svs` directly. So that is the comparison that matters.
+
+**Filling RAM with a whole slide** — 1,408 tiles at level 1, Tesla T4:
+
+| | Time | Per tile | |
+|---|---|---|---|
+| openslide | 14.74s | 10.47 ms | 1.0x |
+| **cuCIM** | 2.46s | 1.75 ms | 6.0x |
+| **omnia-sdk** | **0.99s** | **0.70 ms** | **14.9x** |
+
+**2.5x faster than cuCIM**, from a file 2.9x smaller on disk (177.6 MB `.svs`
+-> 61.1 MB `.omnia`). This is the number to judge the project by.
+
+#### Where cuCIM wins
+
+Single random tiles, no preloading:
+
+| | Per tile |
+|---|---|
+| cuCIM | **1.66 ms** |
+| omnia-sdk (uncached) | 1.92 ms |
+
+**cuCIM is 15% faster here.** Tiles are stored in batches of 16, so an uncached
+random read decompresses 16 tiles to return one. If your workload is sparse
+random access rather than epoch-style iteration over a cohort, cuCIM is the
+better tool and this is documented so you can make that call before adopting
+anything.
+
+#### What has not been tested
+
+cuCIM's `device="cuda"` path uses GPUDirect Storage, which is **not available on
+Colab** — it failed with `cuFileHandleRegister ... internal error` and fell back
+to compatibility mode, so the 14.26 ms/tile it recorded is meaningless. On real
+NVIDIA hardware with GPUDirect working, cuCIM may be considerably faster than
+measured here. Treat the 2.5x as an upper bound until someone reproduces it on
+a DGX-class machine.
 
 ### End-to-end depends on your training config, not just the container
 
@@ -155,66 +204,60 @@ then every epoch is zero-copy tensor views.
   | Sequential, warm batch cache | 139x |
   | Shuffled DataLoader, `cache_mode="ram"` | **87x** |
 
-  The last row is the one that matters for training, and it is the number the
-  headline refers to.
+  The last row is the one that matters for training. Note again that these are
+  against openslide; measured against cuCIM the uncached case is 0.87x — cuCIM
+  is the faster reader for sparse random access.
 
-## Install
-
-```bash
-pip install https://github.com/mishel-0/omnia-sdk/releases/latest/download/omnia_sdk-1.0.0-py3-none-any.whl
-```
-
-Requires Python 3.9+. OpenSlide comes from `openslide-bin` — no system package.
-
-## Licence
-
-Free **60-day evaluation**, no account and no email:
+## Usage
 
 ```bash
-omnia trial
-```
+# Storage + speed in one: JPEG tiles at 20x, ~4.6x smaller than .svs
+python -m omnia_sdk.cli svs-convert slide.svs slide.train.omnia --codec jpeg --quality 85 --min-level 1
 
-That is the whole flow. The key is written to `~/.omnia/license.key` and the
-CLI shows the days remaining. For a commercial licence:
-**misheladnan35@gmail.com**
+# Lossless training format — Zstd RGB
+python -m omnia_sdk.cli svs-convert slide.svs slide.train-full.omnia
 
-> The check is deterrence, not access control. The validator ships inside the
-> wheel, so it can be bypassed by anyone who reads Python. It exists to keep
-> the evaluation window visible, not to stop a determined user — no
-> client-side scheme can do that.
+# Lossless storage — drop the 40x level: ~8x smaller than .svs
+python -m omnia_sdk.cli svs-native slide.svs slide.store.omnia --min-level 1
 
-## Convert a slide
+# Verify integrity (CRC check)
+python -m omnia_sdk.cli verify slide.omnia
 
-One line:
-
-```python
-import omnia_sdk
-
-omnia_sdk.convert("slide.svs")              # -> slide.omnia
-omnia_sdk.convert("slides/", "out/")        # a whole directory
-```
-
-Or from the shell:
-
-```bash
-omnia svs-convert slide.svs slide.omnia --min-level 1
-omnia verify slide.omnia
-omnia info   slide.omnia
-```
-
-## Train on it
-
-```python
+# PyTorch training
 from omnia_sdk import OmniaDataset
 from torch.utils.data import DataLoader
 
-ds = OmniaDataset("slide.omnia", cache_mode="ram")   # decodes once
+ds = OmniaDataset("slide.train.omnia", cache_mode="ram")  # preload once
 loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=0, pin_memory=True)
+for images, labels in loader:
+    ...
 ```
 
-Use `cache_mode="mmap"` past a few dozen slides — `"ram"` holds decoded tiles
-and does not scale to a full cohort.
+## Package layout
 
-For the fastest end-to-end result, enable mixed precision. `.svs` is data-bound
-and gains nothing from it; `.omnia` is compute-bound and gains a lot, which is
-why the measured gap widens from 3.66x to 7.76x.
+```
+omnia-sdk/
+├── omnia_sdk/
+│   ├── __init__.py
+│   ├── container.py       # .omnia read/write (lossless Zstd, CRC per tile)
+│   ├── dataset.py         # OmniaDataset — RAM/mmap/none cache modes
+│   ├── cli.py             # svs-convert / svs-native / verify / info
+│   ├── svs_to_omnia.py    # .svs -> .omnia (zstd or jpeg, --min-level)
+│   ├── native_convert.py  # JP2K passthrough (lossless storage)
+│   └── benchmark.py       # auditable benchmark -> benchmark_results.json
+├── benchmarks/
+│   ├── run_all.sh         # one-command run
+│   └── benchmark_results.json  # generated receipt (gitignored)
+├── colab/
+│   └── omnia_vs_svs_benchmark.ipynb  # one-click colab verification
+├── docs/
+│   ├── BENCHMARK.md       # methodology (incl. regime analysis)
+│   └── VERIFICATION.md    # skeptic's audit guide
+├── requirements.txt
+└── pyproject.toml
+```
+
+## License
+
+MIT — see LICENSE. The benchmark downloads a public test slide at runtime;
+no slide files are shipped in the repo.
