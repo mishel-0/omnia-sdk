@@ -1,6 +1,8 @@
 # omnia-sdk
 
-**The data layer for tile-based whole-slide-image training. Up to 20x faster data feeding than openslide — and we show you exactly when that's true.**
+**The data layer for tile-based whole-slide-image training.**
+**35x faster data feeding than openslide, 7.8x faster end-to-end training on a T4 —
+and we show you exactly when that's true.**
 
 ## The honest headline
 
@@ -34,24 +36,33 @@ slide (CMU-1, 46,000 x 32,914 px), ResNet-18, batch 64, 1,485 tiles/epoch,
 | | `.svs` + openslide | `.omnia` | |
 |---|---|---|---|
 | **Epoch time (fp32)** | 18.91s | **5.17s** | **3.66x** |
+| **Epoch time (AMP + `channels_last`)** | 20.20s | **2.60s** | **7.76x** |
 | Data loading | 18.46s (97.6%) | 0.52s (10.2%) | **35.2x** |
 | On disk | 177.6 MB | 61.1 MB | 2.9x smaller |
 | Preload (one-off) | — | 1.0s | repaid in 0.1 epochs |
 
 ### End-to-end depends on your training config, not just the container
 
-`.svs` is **data-bound** — 97.6% of its epoch is JPEG-2000 decoding, so a
-faster GPU changes nothing. `.omnia` is **compute-bound**. Every improvement to
-model throughput therefore *increases* the omnia-sdk advantage:
+`.svs` is **data-bound** — 97.6% of its epoch is JPEG-2000 decoding. `.omnia` is
+**compute-bound**. So every improvement to model throughput lands entirely on the
+`.omnia` side, and the gap widens:
 
-| Training config (T4, ResNet-18) | `.omnia` epoch | End-to-end |
-|---|---|---|
-| fp32 | 5.16s | 3.66x |
-| + AMP (fp16 autocast) | 3.26s | **5.81x** |
-| + AMP + `channels_last` | 2.62s | **7.23x** |
+| Training config (T4, ResNet-18) | `.svs` | `.omnia` | End-to-end |
+|---|---|---|---|
+| fp32 | 18.91s | 5.17s | **3.66x** |
+| AMP + `channels_last` | 20.20s | 2.60s | **7.76x** |
 
-The `.svs` baseline stays at 18.91s in every row. That asymmetry is the whole
-point: this is not a fixed multiplier, it is the removal of a fixed cost.
+Both rows measured head-to-head in a single run, 4 epochs, epoch 1 discarded.
+
+Note the `.svs` column: enabling AMP made it **slower**, 18.91s to 20.20s. Mixed
+precision adds autocast and GradScaler overhead, and on a pipeline that spends
+97.6% of its time decoding there is no compute to accelerate in return — so you
+pay the cost and collect nothing. Optimising your model actively penalises the
+`.svs` path while rewarding `.omnia`.
+
+That asymmetry is the point. This is not a fixed multiplier applied to your
+training time; it is the removal of a fixed cost. The faster your model gets,
+the larger the ratio becomes.
 
 ### The container is not the bottleneck
 
