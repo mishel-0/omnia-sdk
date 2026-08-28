@@ -29,14 +29,14 @@ views.
 ## Step 2 — run it yourself
 
 ```bash
-git clone https://github.com/mishel-0/omnia-20x.git
-cd omnia-20x
+git clone https://github.com/mishel-0/omnia-sdk.git
+cd omnia-sdk
 pip install -e .
 python -m omnia_sdk.benchmark
 ```
 
 Or use the one-click Colab notebook (no install, no uploads):
-https://colab.research.google.com/github/mishel-0/omnia-20x/blob/main/colab/omnia_vs_svs_benchmark.ipynb
+https://colab.research.google.com/github/mishel-0/omnia-sdk/blob/main/colab/omnia_vs_svs_benchmark.ipynb
 
 Expected: a printed summary and `benchmarks/benchmark_results.json`.
 

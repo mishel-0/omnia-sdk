@@ -1,4 +1,4 @@
-# omnia-20x
+# omnia-sdk
 
 **The data layer for tile-based whole-slide-image training. Up to 20x faster data feeding than openslide — and we show you exactly when that's true.**
 
@@ -8,7 +8,7 @@ We don't sell magic. We sell fewer idle GPU-hours for the common case in
 tile-based classification (Gleason grading, detection, PANDA-style models on
 ResNet/EfficientNet-class architectures). On that workload, openslide keeps
 your GPU at ~21% utilization while it decodes JPEG-2000 every epoch.
-omnia-20x preloads once and feeds the GPU at ~97-100%.
+omnia-sdk preloads once and feeds the GPU at ~97-100%.
 
 | Regime (full-train speedup) | Typical workload | Data feeding | End-to-end epoch |
 |---|---|---|---|
@@ -42,7 +42,7 @@ slide (CMU-1, 46,000 x 32,914 px), ResNet-18, batch 64, 1,485 tiles/epoch,
 
 `.svs` is **data-bound** — 97.6% of its epoch is JPEG-2000 decoding, so a
 faster GPU changes nothing. `.omnia` is **compute-bound**. Every improvement to
-model throughput therefore *increases* the omnia-20x advantage:
+model throughput therefore *increases* the omnia-sdk advantage:
 
 | Training config (T4, ResNet-18) | `.omnia` epoch | End-to-end |
 |---|---|---|
@@ -75,15 +75,15 @@ little I/O left to remove, not that the container underperformed.
 ## Reproduce it yourself — one command
 
 ```bash
-git clone https://github.com/mishel-0/omnia-20x.git
-cd omnia-20x
+git clone https://github.com/mishel-0/omnia-sdk.git
+cd omnia-sdk
 pip install -e .
 python -m omnia_sdk.benchmark            # downloads a public slide, measures, writes JSON
 ```
 
 Or one click, no install, no uploads:
 
-[**Open the auditable benchmark in Google Colab**](https://colab.research.google.com/github/mishel-0/omnia-20x/blob/main/colab/omnia_vs_svs_benchmark.ipynb)
+[**Open the auditable benchmark in Google Colab**](https://colab.research.google.com/github/mishel-0/omnia-sdk/blob/main/colab/omnia_vs_svs_benchmark.ipynb)
 
 The benchmark writes `benchmarks/benchmark_results.json` with machine info,
 package versions, slide SHA-256, per-epoch times (data-only and full-train),
@@ -175,7 +175,7 @@ for images, labels in loader:
 ## Package layout
 
 ```
-omnia-20x/
+omnia-sdk/
 ├── omnia_sdk/
 │   ├── __init__.py
 │   ├── container.py       # .omnia read/write (lossless Zstd, CRC per tile)

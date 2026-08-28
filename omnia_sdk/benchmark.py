@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-omnia-20x auditable benchmark.
+omnia-sdk auditable benchmark.
 
 Actually MEASURES the data-path speedup (.svs + openslide vs .omnia + RAM
 preload) and writes a fully honest JSON receipt. Nothing is hardcoded —
@@ -36,7 +36,7 @@ def download_slide(url: str, dest: Path) -> Path:
     """Download a public .svs; returns local path. Raises on failure."""
     print(f"  downloading public slide: {url}")
     t0 = time.time()
-    req = urllib.request.Request(url, headers={"User-Agent": "omnia-20x-benchmark/1.0"})
+    req = urllib.request.Request(url, headers={"User-Agent": "omnia-sdk-benchmark/1.0"})
     with urllib.request.urlopen(req, timeout=120) as r, open(dest, "wb") as f:
         total = int(r.headers.get("Content-Length", 0))
         got = 0
@@ -64,7 +64,7 @@ def sha256(path: Path) -> str:
 def package_versions() -> dict:
     import importlib.metadata as md
     out = {}
-    for pkg in ("torch", "torchvision", "numpy", "zstandard", "openslide-python", "tifffile", "Pillow", "omnia-20x"):
+    for pkg in ("torch", "torchvision", "numpy", "zstandard", "openslide-python", "tifffile", "Pillow", "omnia-sdk"):
         try:
             out[pkg] = md.version(pkg)
         except md.PackageNotFoundError:
@@ -186,7 +186,7 @@ def run_benchmark(svs_path: Path, omnia_path: Path, tiles_n: int, epochs: int,
                   train_tiles: int = 512, train_epochs: int = 2) -> dict:
     from openslide import OpenSlide
 
-    print("== omnia-20x auditable benchmark ==")
+    print("== omnia-sdk auditable benchmark ==")
     torch.manual_seed(42)
     np.random.seed(42)
     rng = random.Random(42)
@@ -273,7 +273,7 @@ def run_benchmark(svs_path: Path, omnia_path: Path, tiles_n: int, epochs: int,
         regime = "unknown (full-train disabled)"
 
     result = {
-        "benchmark": "omnia-20x auditable benchmark",
+        "benchmark": "omnia-sdk auditable benchmark",
         "version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
         "machine": {
@@ -334,7 +334,7 @@ def run_benchmark(svs_path: Path, omnia_path: Path, tiles_n: int, epochs: int,
     print(f"\n  proof written to {out_path}")
 
     print("\n" + "=" * 52)
-    print("  omnia-20x RESULT")
+    print("  omnia-sdk RESULT")
     print("=" * 52)
     print(f"  .svs data:   {svs_mean:.2f}s/epoch")
     print(f"  .omnia data: {omnia_mean:.2f}s/epoch  (preload {preload_time:.1f}s one-time)")
@@ -365,7 +365,7 @@ def resolve_slide(args) -> Path:
 
 
 def main():
-    ap = argparse.ArgumentParser(description="omnia-20x auditable benchmark")
+    ap = argparse.ArgumentParser(description="omnia-sdk auditable benchmark")
     ap.add_argument("--svs", default=None, help="Path to a .svs slide (default: download public one)")
     ap.add_argument("--tiles", type=int, default=5000, help="Tiles per epoch (default 5000)")
     ap.add_argument("--epochs", type=int, default=5, help="Epochs per path (default 5)")

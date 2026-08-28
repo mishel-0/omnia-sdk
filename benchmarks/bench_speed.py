@@ -21,7 +21,7 @@ from PIL import Image
 from omnia_sdk.container import OmniaContainer
 from omnia_sdk.dataset import OmniaDataset
 
-SVS = "/Users/misheladnan/Desktop/omnia-20x/data/TCGA.svs"
+SVS = "/Users/misheladnan/Desktop/omnia-sdk/data/TCGA.svs"
 TS = 256
 
 

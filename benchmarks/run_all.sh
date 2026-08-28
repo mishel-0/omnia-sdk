@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# omnia-20x: one-command reproducible benchmark.
+# omnia-sdk: one-command reproducible benchmark.
 #   ./benchmarks/run_all.sh            -> runs, writes benchmarks/benchmark_results.json
 #   ./benchmarks/run_all.sh --svs s.svs -> use your own slide
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-echo "== omnia-20x run_all =="
+echo "== omnia-sdk run_all =="
 python -m pip install -q -r requirements.txt
 python -m pip install -q -e .
 python -m omnia_sdk.benchmark "$@"

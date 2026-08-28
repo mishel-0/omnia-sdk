@@ -1,5 +1,5 @@
 """
-omnia-20x — PyTorch-native container for whole-slide images.
+omnia-sdk — PyTorch-native container for whole-slide images.
 
 Up to 20x faster data feeding than openslide for tile-based WSI training.
 Lossless Zstd container, CRC-verified, zero-copy random access, no openslide
