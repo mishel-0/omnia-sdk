@@ -158,56 +158,63 @@ then every epoch is zero-copy tensor views.
   The last row is the one that matters for training, and it is the number the
   headline refers to.
 
-## Usage
+## Install
 
 ```bash
-# Storage + speed in one: JPEG tiles at 20x, ~4.6x smaller than .svs
-python -m omnia_sdk.cli svs-convert slide.svs slide.train.omnia --codec jpeg --quality 85 --min-level 1
+pip install https://github.com/mishel-0/omnia-sdk/releases/latest/download/omnia_sdk-1.0.0-py3-none-any.whl
+```
 
-# Lossless training format — Zstd RGB
-python -m omnia_sdk.cli svs-convert slide.svs slide.train-full.omnia
+Requires Python 3.9+. OpenSlide comes from `openslide-bin` — no system package.
 
-# Lossless storage — drop the 40x level: ~8x smaller than .svs
-python -m omnia_sdk.cli svs-native slide.svs slide.store.omnia --min-level 1
+## Licence
 
-# Verify integrity (CRC check)
-python -m omnia_sdk.cli verify slide.omnia
+Free **60-day evaluation**, no account and no email:
 
-# PyTorch training
+```bash
+omnia trial
+```
+
+That is the whole flow. The key is written to `~/.omnia/license.key` and the
+CLI shows the days remaining. For a commercial licence:
+**misheladnan35@gmail.com**
+
+> The check is deterrence, not access control. The validator ships inside the
+> wheel, so it can be bypassed by anyone who reads Python. It exists to keep
+> the evaluation window visible, not to stop a determined user — no
+> client-side scheme can do that.
+
+## Convert a slide
+
+One line:
+
+```python
+import omnia_sdk
+
+omnia_sdk.convert("slide.svs")              # -> slide.omnia
+omnia_sdk.convert("slides/", "out/")        # a whole directory
+```
+
+Or from the shell:
+
+```bash
+omnia svs-convert slide.svs slide.omnia --min-level 1
+omnia verify slide.omnia
+omnia info   slide.omnia
+```
+
+## Train on it
+
+```python
 from omnia_sdk import OmniaDataset
 from torch.utils.data import DataLoader
 
-ds = OmniaDataset("slide.train.omnia", cache_mode="ram")  # preload once
+ds = OmniaDataset("slide.omnia", cache_mode="ram")   # decodes once
 loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=0, pin_memory=True)
-for images, labels in loader:
-    ...
 ```
 
-## Package layout
+Use `cache_mode="mmap"` past a few dozen slides — `"ram"` holds decoded tiles
+and does not scale to a full cohort.
 
-```
-omnia-sdk/
-├── omnia_sdk/
-│   ├── __init__.py
-│   ├── container.py       # .omnia read/write (lossless Zstd, CRC per tile)
-│   ├── dataset.py         # OmniaDataset — RAM/mmap/none cache modes
-│   ├── cli.py             # svs-convert / svs-native / verify / info
-│   ├── svs_to_omnia.py    # .svs -> .omnia (zstd or jpeg, --min-level)
-│   ├── native_convert.py  # JP2K passthrough (lossless storage)
-│   └── benchmark.py       # auditable benchmark -> benchmark_results.json
-├── benchmarks/
-│   ├── run_all.sh         # one-command run
-│   └── benchmark_results.json  # generated receipt (gitignored)
-├── colab/
-│   └── omnia_vs_svs_benchmark.ipynb  # one-click colab verification
-├── docs/
-│   ├── BENCHMARK.md       # methodology (incl. regime analysis)
-│   └── VERIFICATION.md    # skeptic's audit guide
-├── requirements.txt
-└── pyproject.toml
-```
-
-## License
-
-MIT — see LICENSE. The benchmark downloads a public test slide at runtime;
-no slide files are shipped in the repo.
+For the fastest end-to-end result, enable mixed precision. `.svs` is data-bound
+and gains nothing from it; `.omnia` is compute-bound and gains a lot, which is
+why the measured gap widens from 3.66x to 7.76x.
