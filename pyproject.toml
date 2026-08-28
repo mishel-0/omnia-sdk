@@ -1,0 +1,53 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "omnia-20x"
+version = "1.0.0"
+description = "PyTorch-native WSI container — 20x faster data feeding than openslide, with an auditable benchmark"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "Mishel Adnan", email = "misheladnan35@gmail.com"}
+]
+keywords = ["pathology", "whole-slide", "svs", "openslide", "pytorch", "compression", "medical-imaging", "ai-training"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Healthcare Industry",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+]
+requires-python = ">=3.11"
+dependencies = [
+    "numpy>=1.24.0",
+    "torch>=2.0.0",
+    "zstandard>=0.21.0",
+    "tifffile>=2024.0.0",
+]
+
+[project.optional-dependencies]
+svs = ["openslide-python>=1.4.0", "Pillow>=10.0.0"]  # needed for .svs conversion + benchmark
+dev = ["pytest>=7.0.0"]
+
+[project.scripts]
+omnia = "omnia_sdk.cli:main"
+omnia-benchmark = "omnia_sdk.benchmark:main"
+
+[project.urls]
+Homepage = "https://github.com/mishel-0/omnia-20x"
+Documentation = "https://github.com/mishel-0/omnia-20x#readme"
+Repository = "https://github.com/mishel-0/omnia-20x"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["omnia_sdk*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]

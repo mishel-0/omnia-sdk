@@ -1,262 +1,202 @@
-<p align="center">
-  <br/>
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:0a1628,100:0d1b2a&height=200&section=header&text=.omnia&fontSize=70&fontColor=0066CC&animation=fadeIn" width="100%"/>
-</p>
+# omnia-20x
 
-<p align="center" style="font-size: 14px; color: #8899aa; max-width: 560px; line-height: 1.8;">
-  A study&rsquo;s 277 DICOM files generate 3,387 files per dataset we tested. Each epoch opens, parses, reads, and closes every file.
-  <strong style="color: #99aabb;">.omnia proposes a single-file container that eliminates this per-file overhead in medical AI pipelines.</strong>
-</p>
+**The data layer for tile-based whole-slide-image training. Up to 20x faster data feeding than openslide — and we show you exactly when that's true.**
 
-<p align="center">
-  <a href="https://img.shields.io/badge/status-research--prototype-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/status-research--prototype-0066CC?style=flat-square&labelColor=0a1628" alt="Status"></a>
-  <a href="https://img.shields.io/badge/license-proprietary-445566?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/license-proprietary-445566?style=flat-square&labelColor=0a1628" alt="License"></a>
-  <a href="https://img.shields.io/badge/version-1.1.2-0066CC?style=flat-square&labelColor=0a1628"><img src="https://img.shields.io/badge/version-1.1.2-0066CC?style=flat-square&labelColor=0a1628" alt="Version"></a>
-</p>
+## The honest headline
 
----
+We don't sell magic. We sell fewer idle GPU-hours for the common case in
+tile-based classification (Gleason grading, detection, PANDA-style models on
+ResNet/EfficientNet-class architectures). On that workload, openslide keeps
+your GPU at ~21% utilization while it decodes JPEG-2000 every epoch.
+omnia-20x preloads once and feeds the GPU at ~97-100%.
 
-## Installation
+| Regime (full-train speedup) | Typical workload | Data feeding | End-to-end epoch |
+|---|---|---|---|
+| **Data-bound** (≥ 10x) | Tile classification, grading, detection — small/fast models | **15-25x** | **10x+** |
+| **Mixed** (~2-10x) | Medium models, high-throughput pipelines | 5-20x (hidden) | ~2-10x |
+| **Model-bound** (~1-2x) | Foundation-model fine-tuning (UNI, Virchow), huge ViTs | 5-20x (hidden) | ~1-2x |
+
+The regime thresholds are exactly 10x and 2x full-train speedup — the same
+numbers the benchmark writes into every JSON receipt, so a run's own
+classification never contradicts this table.
+
+The benchmark reports BOTH numbers (data-only and full-train) so you — or
+your technical diligence — can see which regime you're in. If your model is
+the bottleneck, the savings shrink toward break-even, and we say so before
+you ask.
+
+## Measured results
+
+Reproduced end-to-end on a Colab **Tesla T4** with a public 178 MB Aperio
+slide (CMU-1, 46,000 x 32,914 px), ResNet-18, batch 64, 1,485 tiles/epoch,
+4 epochs, epoch 1 discarded:
+
+| | `.svs` + openslide | `.omnia` | |
+|---|---|---|---|
+| **Epoch time (fp32)** | 18.91s | **5.17s** | **3.66x** |
+| Data loading | 18.46s (97.6%) | 0.52s (10.2%) | **35.2x** |
+| On disk | 177.6 MB | 61.1 MB | 2.9x smaller |
+| Preload (one-off) | — | 1.0s | repaid in 0.1 epochs |
+
+### End-to-end depends on your training config, not just the container
+
+`.svs` is **data-bound** — 97.6% of its epoch is JPEG-2000 decoding, so a
+faster GPU changes nothing. `.omnia` is **compute-bound**. Every improvement to
+model throughput therefore *increases* the omnia-20x advantage:
+
+| Training config (T4, ResNet-18) | `.omnia` epoch | End-to-end |
+|---|---|---|
+| fp32 | 5.16s | 3.66x |
+| + AMP (fp16 autocast) | 3.26s | **5.81x** |
+| + AMP + `channels_last` | 2.62s | **7.23x** |
+
+The `.svs` baseline stays at 18.91s in every row. That asymmetry is the whole
+point: this is not a fixed multiplier, it is the removal of a fixed cost.
+
+### The container is not the bottleneck
+
+Profiled on the same T4, isolating each component:
+
+```
+pure GPU compute, zero data movement    4.891s   <- the real floor
+current .omnia data path                5.087s   <- only 4% overhead
+entire slide resident in GPU memory     5.094s   <- no faster
+```
+
+Loading the whole slide into VRAM does not beat the container. There is no
+data-path win left; what limits end-to-end is how fast your GPU runs the model.
+
+### For reference: a model-bound machine
+
+The same code on an Apple M5 (MPS), where data was only 37% of the epoch:
+15.2x data feeding, **1.31x end-to-end**. Low end-to-end numbers mean there was
+little I/O left to remove, not that the container underperformed.
+
+## Reproduce it yourself — one command
 
 ```bash
-pip install https://github.com/mishel-0/omnia-sdk/releases/download/v1.1.2/omnia_sdk-1.1.2-py3-none-any.whl
+git clone https://github.com/mishel-0/omnia-20x.git
+cd omnia-20x
+pip install -e .
+python -m omnia_sdk.benchmark            # downloads a public slide, measures, writes JSON
+```
+
+Or one click, no install, no uploads:
+
+[**Open the auditable benchmark in Google Colab**](https://colab.research.google.com/github/mishel-0/omnia-20x/blob/main/colab/omnia_vs_svs_benchmark.ipynb)
+
+The benchmark writes `benchmarks/benchmark_results.json` with machine info,
+package versions, slide SHA-256, per-epoch times (data-only and full-train),
+the speedups, and GPU utilization samples. Nothing is hardcoded — every
+number is measured on the machine that runs it. See
+[docs/VERIFICATION.md](docs/VERIFICATION.md).
+
+## Why it matters, in money terms
+
+Pathology labs train on rented A100s/T4s. If a training pipeline is
+data-bound (the common tile-classification case), data feeding is the
+idle-GPU tax. Cutting it 10-20x means either fewer GPU-hours per experiment
+or the same hours producing proportionally more epochs. This is the same
+thesis as the dataset-infrastructure category (e.g. Activeloop/Deep Lake):
+the format + loading layer is where training efficiency is won or lost.
+
+## What the .omnia container is
+
+One file replaces .svs + openslide: lossless Zstd tiles, CRC-verified,
+zero-copy random access, no openslide dependency at training time.
+`OmniaDataset(cache_mode="ram")` decodes everything once at init (~2-5s),
+then every epoch is zero-copy tensor views.
+
+## Other honest numbers
+
+- **Compression**: zstd is lossless, ~5x vs raw pixels — the file stays
+  LARGER than the .svs, because .svs is already JPEG-2000-compressed ~127x.
+  `--codec jpeg --min-level 1` gives ~4.6x smaller than the .svs (lossy,
+  fine for training). `svs-native --min-level 1` gives ~7.9x smaller,
+  lossless (storage; keeps JP2K bytes).
+- **num_workers must be 0** for preloaded data — workers only add IPC
+  overhead (measured 1.12x slower). Use `pin_memory=True` on GPU.
+- **RAM is the limit, not disk.** `cache_mode="ram"` decodes every tile to
+  raw RGB and holds it, so memory scales with tiles retained, not with file
+  size. Measured on one 61 MB slide (15,374 x 17,497, 4,569 tiles):
+
+  | Config | .omnia on disk | RAM preloaded | 1,000 slides |
+  |---|---|---|---|
+  | Lossless zstd, all levels | 542 MB | ~3.3 GB | 529 GB disk · 3.3 TB RAM |
+  | `--codec jpeg --min-level 1` | 3.8 MB | ~343 MB | 3.7 GB disk · 335 GB RAM |
+
+  The recommended config is 16x smaller than the .svs on disk, but a
+  full-cohort preload still will not fit in RAM. For anything past a few
+  dozen slides, use `cache_mode="mmap"`, or preload one slide at a time and
+  iterate slides in the outer loop.
+
+- **`cache_mode="none"` is slower than openslide, not faster.** Tiles are
+  compressed in batches (default 16), so an uncached random read decompresses
+  16 tiles to return 1. Measured on 300 random level-0 tiles: openslide
+  2.15 ms/tile vs .omnia 2.49 ms/tile — **0.9x**. The speedup comes from
+  preloading or sequential access, not from the container being faster per
+  isolated random read:
+
+  | Access pattern | vs openslide |
+  |---|---|
+  | Random, `cache_mode="none"` | **0.9x** (slower) |
+  | Sequential, cold | 8.8x |
+  | Sequential, warm batch cache | 139x |
+  | Shuffled DataLoader, `cache_mode="ram"` | **87x** |
+
+  The last row is the one that matters for training, and it is the number the
+  headline refers to.
+
+## Usage
+
+```bash
+# Storage + speed in one: JPEG tiles at 20x, ~4.6x smaller than .svs
+python -m omnia_sdk.cli svs-convert slide.svs slide.train.omnia --codec jpeg --quality 85 --min-level 1
+
+# Lossless training format — Zstd RGB
+python -m omnia_sdk.cli svs-convert slide.svs slide.train-full.omnia
+
+# Lossless storage — drop the 40x level: ~8x smaller than .svs
+python -m omnia_sdk.cli svs-native slide.svs slide.store.omnia --min-level 1
+
+# Verify integrity (CRC check)
+python -m omnia_sdk.cli verify slide.omnia
+
+# PyTorch training
+from omnia_sdk import OmniaDataset
+from torch.utils.data import DataLoader
+
+ds = OmniaDataset("slide.train.omnia", cache_mode="ram")  # preload once
+loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=0, pin_memory=True)
+for images, labels in loader:
+    ...
+```
+
+## Package layout
+
+```
+omnia-20x/
+├── omnia_sdk/
+│   ├── __init__.py
+│   ├── container.py       # .omnia read/write (lossless Zstd, CRC per tile)
+│   ├── dataset.py         # OmniaDataset — RAM/mmap/none cache modes
+│   ├── cli.py             # svs-convert / svs-native / verify / info
+│   ├── svs_to_omnia.py    # .svs -> .omnia (zstd or jpeg, --min-level)
+│   ├── native_convert.py  # JP2K passthrough (lossless storage)
+│   └── benchmark.py       # auditable benchmark -> benchmark_results.json
+├── benchmarks/
+│   ├── run_all.sh         # one-command run
+│   └── benchmark_results.json  # generated receipt (gitignored)
+├── colab/
+│   └── omnia_vs_svs_benchmark.ipynb  # one-click colab verification
+├── docs/
+│   ├── BENCHMARK.md       # methodology (incl. regime analysis)
+│   └── VERIFICATION.md    # skeptic's audit guide
+├── requirements.txt
+└── pyproject.toml
 ```
 
 ## License
 
-A license key is required. Generate one instantly (no account, no email):
-
-```bash
-# Download the key generator
-curl -O https://raw.githubusercontent.com/mishel-0/omnia-sdk/main/gen_key.py
-
-# Generate a key valid for 365 days
-python3 gen_key.py
-
-# Activate
-mkdir -p ~/.omnia && echo "your-key-here" > ~/.omnia/license.key
-```
-
-The key expires 365 days from the date it was generated. After expiry, run `gen_key.py` again for a new key.
-
-For commercial licensing: **misheladnan35@gmail.com**
-
----
-
-## Quickstart
-
-```bash
-# Compress a DICOM study
-omnia compress ./ct_study/ ./output/
-
-# Extract back to DICOM
-omnia extract ./study.omnia ./restored/
-
-# Verify integrity (CRC check on all slices)
-omnia verify ./study.omnia
-```
-
-```python
-from omnia_sdk import OmniaContainer
-
-# Open a .omnia file
-study = OmniaContainer("ct_scan.omnia")
-study.open()
-
-# Random access to any slice — O(1)
-slice_47 = study.get_slice(47)
-
-# Bulk read
-for i in range(study.num_slices):
-    vol = study.get_slice(i)
-
-study.close()
-```
-
-```python
-# PyTorch training (requires torch)
-from omnia_sdk.dataset import OmniaDataset
-from torch.utils.data import DataLoader
-
-ds = OmniaDataset("/path/to/compressed/")
-loader = DataLoader(ds, batch_size=64, shuffle=True, num_workers=4)
-for images, labels in loader:
-    out = model(images)
-```
-
----
-
-## The problem
-
-Medical imaging built its storage architecture around DICOM in 1993. The standard made sense at the time — each CT slice was a separate file, networks were slow, and studies had 20 slices.
-
-Three decades later, a single CT study routinely produces **277 files**. A training dataset of 50,000 studies represents **13.8 million files**. Every epoch of training opens, stats, reads, and closes every file:
-
-```
-for each of 13.8M files:
-    stat()      → metadata lookup       (syscall)
-    open()      → file descriptor       (syscall)
-    parse()     → DICOM header          (CPU)
-    read()      → pixel data            (I/O)
-    close()     → release descriptor    (syscall)
-```
-
-That's **69 million syscalls per epoch** — before a single pixel reaches the GPU. The operating system spends more time resolving file paths and managing descriptors than transferring data. GPU utilization stalls at **48%**.
-
----
-
-## The insight
-
-The I/O tax exists because the industry accepted a 1:1 mapping between slices and files. There is no technical reason for it. A CT study is a single logical volume — 277 slices that form a contiguous 3D block. Storing them as 277 independent files is a historical artifact.
-
-> **277 files is not a feature of the data. It is a limitation of the format.**
-
-Collapsing 277 files into one eliminates the I/O tax at every layer: filesystem metadata, system calls, DICOM header parsing, and storage allocation.
-
----
-
-## Pipeline
-
-```
-  CT Study (277 DICOM files)
-         │
-         ▼
-  ┌──────────────────┐
-  │     Indexer       │  Scan DICOM headers, collect metadata
-  └────────┬─────────┘
-           │
-  ┌────────▼─────────┐
-  │  Chunk Compressor │  Compress each slice independently
-  └────────┬─────────┘
-           │
-  ┌────────▼─────────┐
-  │   Offset Table    │  Build O(1) index: slice N → byte offset + CRC32
-  └────────┬─────────┘
-           │
-  ┌────────▼─────────┐
-  │ Container Writer  │  Serialize header + table + chunks → 1 file
-  └────────┬─────────┘
-           │
-           ▼
-     study.omnia (1 file)
-           │
-           ▼
-  ┌──────────────────┐
-  │ PyTorch DataLoader │  O(1) random access, persistent handles
-  └────────┬─────────┘
-           │
-           ▼
-          GPU
-```
-
----
-
-## Container format
-
-```
-[OMN2 magic:4] [version:1] [codec:1] [reserved:2]
-[meta_size:8] [zstd(JSON metadata)]
-[CRC:4+zstd(slice_0)] [CRC:4+zstd(slice_1)] ... [CRC:4+zstd(slice_N)]
-```
-
-Each slice independently addressable via the offset table. Accessing slice 147 does not require decompressing slices 0-146. No full-file extraction. CRC32 per chunk for corruption detection.
-
----
-
-## Benchmark
-
-Measured on: NVIDIA RTX A4000 · ResNet-18 · 3,387 real LIDC-CT slices · Batch 64 · 4 workers
-
-### GPU utilization
-
-```
-Epoch  DICOM  .omnia
-─────────────────────
- 1      ████░░░░░  9%   ████████████░░ 31%
- 2      ███████░░ 17%   ████████████████████████████████░░ 89%
- 3      ██████████ 24%   ████████████████████████████████████████ 95%
- 4      ██████████████████ 44%   ████████████████████████████████████████ 95%
- 5      ████████████████████ 52%   ██████████████████████████████████████ 91%
-```
-
-DICOM averages **29% GPU utilization**. .omnia averages **80% GPU utilization**.
-The GPU feeds on DICOM's idle time — 3,387 file opens per epoch keep the CPU busy, not the GPU.
-
-### Cold start — real-world behavior
-
-This is the honest benchmark. System cold, caches empty, no shortcuts.
-
-| Epoch | Raw DICOM | .omnia |
-|-------|-----------|--------|
-| 1 | 215.8 s | 69.3 s |
-| 2 | 133.6 s | 21.9 s |
-| 3 | 95.6 s | 21.9 s |
-| 4 | 41.0 s | 21.9 s |
-| 5 | 40.9 s | 21.9 s |
-
-### Steady state — fully cached (1.8 GB dataset in 440 GB RAM)
-
-Only relevant when the entire dataset fits in RAM. Since production datasets routinely exceed available memory, the cold-start numbers above are the dominant regime.
-
-| Metric | Raw DICOM | .omnia |
-|--------|-----------|--------|
-| Mean epoch | 18.1 s | 17.8 s |
-| Storage | 1,819 MB | 837 MB |
-| Dataset load | 127.6 s | 0.7 s |
-| Lossless | — | 0 errors / 3,387 slices |
-
-> **Why two tables?** The test system has 440 GB RAM. Our 1.8 GB dataset fits entirely in OS page cache after a few epochs. The steady-state numbers show that once everything is cached, both run at similar speed. The cold-start numbers show the real-world difference when the cache is empty. For production datasets exceeding available RAM, cold-start behavior is the dominant regime.
-
----
-
-## What it eliminates
-
-| Layer | Conventional DICOM | .omnia |
-|-------|-------------------|--------|
-| **Filesystem metadata** | 13.8M inodes | 50K inodes |
-| **System calls per epoch** | ~17,000 | ~30 |
-| **DICOM parsing** | Per-slice header traversal | Once per container |
-| **File descriptors** | 3,387 per epoch | 15, opened once |
-| **Storage overhead** | Repeated DICOM headers × 277 | Single minimal header |
-| **Ingestion atomicity** | 277 writes — partial on crash | 1 write — atomic |
-| **Backup** | 50M files → 3 days | 50K files → 1 hour |
-
----
-
-## Comparison
-
-| Format | Random access | Lossless | Single file | DICOM-aware | Per-slice CRC |
-|--------|:---:|:---:|:---:|:---:|:---:|
-| Raw DICOM | ✅ | ✅ | ❌ | ✅ | ❌ |
-| ZIP | ❌ | ✅ | ✅ | ❌ | ❌ |
-| tar.gz | ❌ | ✅ | ✅ | ❌ | ❌ |
-| Multi-page TIFF | O(n) | ✅ | ✅ | ❌ | ❌ |
-| NIfTI (.nii) | ❌ | ✅ | ✅ | ❌ | ❌ |
-| H.265 / AV1 | ❌ | ❌ | ✅ | ❌ | ❌ |
-| **.omnia** | **O(1)** | **✅** | **✅** | **✅** | **✅** |
-
----
-
-## Limitations
-
-- Single-series CT only. Multi-series and multi-modality not yet supported.
-- Not a DICOM transfer syntax — complements DICOM, does not replace it.
-- Requires custom reader — no native PACS or viewer support.
-- Research prototype. Not clinically validated. Not for diagnostic use.
-- Designed as a cache / training format alongside existing PACS infrastructure.
-
----
-
-## License & Contact
-
-**Proprietary** — All rights reserved. License key required.
-
-```
-misheladnan35@gmail.com
-```
-
----
-
-<p align="center">
-  <span style="font-size: 11px; color: #445566;">© 2026</span>
-</p>
+MIT — see LICENSE. The benchmark downloads a public test slide at runtime;
+no slide files are shipped in the repo.

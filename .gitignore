@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Virtualenvs
+.venv/
+venv/
+env/
+
+# Data — never commit whole-slide images (hundreds of MB)
+data/
+*.svs
+*.omnia
+
+# Benchmark artifacts
+benchmarks/benchmark_results.json
+benchmarks/latest_run/
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/
