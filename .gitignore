@@ -1,26 +1,22 @@
-# Python
-__pycache__/
-*.py[cod]
-*.egg-info/
-.eggs/
+# Build artefacts
 build/
 dist/
+*.egg-info/
+__pycache__/
+*.py[cod]
 
 # Virtualenvs
 .venv/
 venv/
-env/
 
-# Data — never commit whole-slide images (hundreds of MB)
-data/
-*.svs
+# Test and benchmark output — .omnia files are generated, sometimes gigabytes,
+# and never belong in the history of the tool that makes them.
 *.omnia
+*.svs
+.pytest_cache/
+benchmarks/output/
 
-# Benchmark artifacts
-benchmarks/benchmark_results.json
-benchmarks/latest_run/
-
-# OS / IDE
+# Editor / OS
 .DS_Store
 .idea/
 .vscode/

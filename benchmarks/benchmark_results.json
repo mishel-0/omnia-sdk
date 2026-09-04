@@ -1,0 +1,72 @@
+{
+  "benchmark": "omnia-20x auditable benchmark",
+  "version": "1.0.0",
+  "timestamp": "2026-08-05T23:20:04.506051",
+  "machine": {
+    "os": "Darwin",
+    "platform": "macOS-26.5.1-arm64-arm-64bit-Mach-O",
+    "cpu": "arm",
+    "gpu": "None",
+    "cuda_available": false,
+    "python": "3.14.6",
+    "packages": {
+      "torch": "2.12.1",
+      "torchvision": "0.27.1",
+      "numpy": "2.5.0",
+      "zstandard": "0.25.0",
+      "openslide-python": "1.4.6",
+      "tifffile": "2026.7.14",
+      "Pillow": "12.3.0",
+      "omnia-20x": "not-installed"
+    }
+  },
+  "slide": {
+    "path": "/Users/misheladnan/Desktop/omnia-13x/data/TCGA.svs",
+    "size_bytes": 168725275,
+    "sha256": "4bb1689647ab4e4e138cce2a894d9dd96743a8a2f77ab24b916ce59fff85cb7c"
+  },
+  "container": {
+    "path": "/tmp/omnia_bench_train.omnia",
+    "size_bytes": 195932093,
+    "codec": "zstd-lossless",
+    "tiles": 5000
+  },
+  "measurement": {
+    "tiles": 5000,
+    "batch_size": 64,
+    "epochs": 5,
+    "warmup_dropped": true,
+    "num_workers": 0,
+    "seed": 42,
+    "preload_time_s": 1.06,
+    "svs_epoch_times_s": [
+      7.383,
+      7.369,
+      7.37,
+      7.366,
+      7.369
+    ],
+    "svs_mean_s": 7.368,
+    "omnia_epoch_times_s": [
+      0.1,
+      0.099,
+      0.099,
+      0.099,
+      0.099
+    ],
+    "omnia_mean_s": 0.099,
+    "data_speedup": 74.24,
+    "gpu_util_svs": {},
+    "gpu_util_omnia": {},
+    "passed_20x": true,
+    "full_train": null,
+    "regime": "unknown (full-train skipped on CPU \u2014 run on GPU for regime)"
+  },
+  "notes": [
+    "Speedup is DATA-FEEDING first (loader iteration, no model). The full_train block reports the end-to-end number with a real forward/backward loop. If full_train.speedup is ~1-2x, your workload is model-bound and the data win is hidden in the total.",
+    "Regime tells you which case you are in: data-bound (GPU starved by decode \u2014 the 10-20x case) vs model-bound (training dominates).",
+    "num_workers=0: preloaded data has no I/O to parallelize; workers only add IPC overhead.",
+    "First epoch is warmup and is excluded from the mean when epochs > 1.",
+    "Identical fixed tile set (seed 42) on both paths."
+  ]
+}
