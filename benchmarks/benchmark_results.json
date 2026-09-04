@@ -68,5 +68,18 @@
     "num_workers=0: preloaded data has no I/O to parallelize; workers only add IPC overhead.",
     "First epoch is warmup and is excluded from the mean when epochs > 1.",
     "Identical fixed tile set (seed 42) on both paths."
-  ]
+  ],
+  "provenance": {
+    "supports": [
+      "data_speedup \u2014 the data-feeding measurement is real and was timed on this machine",
+      "container size and lossless round-trip"
+    ],
+    "does_not_support": [
+      "GPU utilisation figures \u2014 no GPU was present, gpu_util_* are empty",
+      "end-to-end training speedup \u2014 full_train is null",
+      "regime classification \u2014 recorded as unknown"
+    ],
+    "note": "Produced on a CPU-only machine. The README's utilisation figures (~21% against ~97-100%) are not measured here and need a GPU run to stand behind. Use colab/omnia_vs_svs_benchmark.ipynb to produce one, then replace this file.",
+    "how_to_reproduce": "python -m omnia_sdk.benchmark --output benchmarks/benchmark_results.json"
+  }
 }

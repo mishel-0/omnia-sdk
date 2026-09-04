@@ -61,6 +61,77 @@ def sha256(path: Path) -> str:
     return h.hexdigest()
 
 
+def cpu_details() -> dict:
+    """The processor, in enough detail to reproduce a timing.
+
+    platform.processor() returns the bare string "arm" on macOS and is often
+    empty on Linux, which is useless in a benchmark whose whole claim is speed:
+    "arm" covers every Apple machine from an M1 Air to an M3 Ultra, and they do
+    not perform alike. Ask the operating system for the real model instead, and
+    record core count and memory, since a preload-to-RAM design is bounded by
+    both.
+    """
+    info = {"arch": platform.machine(), "model": "", "cores": None, "ram_gb": None}
+    try:
+        if platform.system() == "Darwin":
+            def sysctl(key):
+                return subprocess.run(["sysctl", "-n", key], capture_output=True,
+                                      text=True, timeout=5).stdout.strip()
+            info["model"] = sysctl("machdep.cpu.brand_string")
+            info["cores"] = int(sysctl("hw.logicalcpu") or 0) or None
+            mem = sysctl("hw.memsize")
+            info["ram_gb"] = round(int(mem) / 1024 ** 3, 1) if mem.isdigit() else None
+        elif platform.system() == "Linux":
+            for line in Path("/proc/cpuinfo").read_text().splitlines():
+                if line.lower().startswith("model name"):
+                    info["model"] = line.split(":", 1)[1].strip()
+                    break
+            info["cores"] = os.cpu_count()
+            for line in Path("/proc/meminfo").read_text().splitlines():
+                if line.startswith("MemTotal"):
+                    kb = int(line.split()[1])
+                    info["ram_gb"] = round(kb / 1024 ** 2, 1)
+                    break
+        else:
+            info["model"] = platform.processor()
+            info["cores"] = os.cpu_count()
+    except Exception:
+        # A benchmark must still run on a machine it cannot fully describe.
+        pass
+    if not info["model"]:
+        info["model"] = platform.processor() or platform.machine()
+    if not info["cores"]:
+        info["cores"] = os.cpu_count()
+    return info
+
+
+def machine_info() -> dict:
+    """Everything needed to judge whether a published number applies to you.
+
+    Recorded whether or not a GPU is present, and explicit about it when one is
+    not: a data-feeding speedup measured on CPU says nothing about how much GPU
+    idle time the format removes, and a reader must be able to see which kind
+    of run they are looking at without inferring it from a null field.
+    """
+    has_cuda = torch.cuda.is_available()
+    return {
+        "os": platform.system(),
+        "platform": platform.platform(),
+        "cpu": cpu_details(),
+        "gpu": torch.cuda.get_device_name(0) if has_cuda else "None",
+        "cuda_available": has_cuda,
+        "accelerated": has_cuda,
+        "measurement_context": (
+            "GPU present — full-train and utilisation figures are meaningful."
+            if has_cuda else
+            "CPU only. Data-feeding numbers are real, but GPU utilisation and "
+            "end-to-end training speedups cannot be measured on this machine."
+        ),
+        "python": platform.python_version(),
+        "packages": package_versions(),
+    }
+
+
 def package_versions() -> dict:
     import importlib.metadata as md
     out = {}
@@ -276,15 +347,7 @@ def run_benchmark(svs_path: Path, omnia_path: Path, tiles_n: int, epochs: int,
         "benchmark": "omnia-sdk auditable benchmark",
         "version": "1.0.0",
         "timestamp": datetime.now().isoformat(),
-        "machine": {
-            "os": platform.system(),
-            "platform": platform.platform(),
-            "cpu": platform.processor() or platform.machine(),
-            "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "None",
-            "cuda_available": torch.cuda.is_available(),
-            "python": platform.python_version(),
-            "packages": package_versions(),
-        },
+        "machine": machine_info(),
         "slide": {
             "path": str(svs_path),
             "size_bytes": svs_path.stat().st_size,
