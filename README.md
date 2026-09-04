@@ -8,9 +8,17 @@ disk — and we show you exactly where it wins and where it loses.**
 
 We don't sell magic. We sell fewer idle GPU-hours for the common case in
 tile-based classification (Gleason grading, detection, PANDA-style models on
-ResNet/EfficientNet-class architectures). On that workload, openslide keeps
-your GPU at ~21% utilization while it decodes JPEG-2000 every epoch.
-omnia-sdk preloads once and feeds the GPU at ~97-100%.
+ResNet/EfficientNet-class architectures). On that workload, **97.6% of an
+openslide epoch is spent decoding JPEG-2000 rather than training** — against
+10.2% once the slide is an `.omnia` container. Both figures are from the T4
+run in the table below.
+
+That share of time is what the format removes. How much of it converts into
+GPU utilisation depends on your model and your machine, and the committed
+`benchmarks/benchmark_results.json` was produced on a CPU-only box, so it
+carries no utilisation samples to point at. Run
+[the notebook](colab/omnia_vs_svs_benchmark.ipynb) on a GPU if you want that
+number for your own hardware — it is the honest way to get one.
 
 The multipliers in the table below are **against openslide**, because that is
 what most pipelines still use. If you already run cuCIM your baseline is far
@@ -147,8 +155,11 @@ Or one click, no install, no uploads:
 
 The benchmark writes `benchmarks/benchmark_results.json` with machine info,
 package versions, slide SHA-256, per-epoch times (data-only and full-train),
-the speedups, and GPU utilization samples. Nothing is hardcoded — every
-number is measured on the machine that runs it. See
+the speedups, and — on a machine with a GPU — utilisation samples. Nothing is
+hardcoded: every number is measured on the machine that runs it, and the file
+records which of its own claims that machine could and could not support. The
+committed one is a CPU run, so its utilisation and end-to-end fields are
+empty. See
 [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
 ## Why it matters, in money terms

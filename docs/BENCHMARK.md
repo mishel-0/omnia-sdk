@@ -26,8 +26,15 @@ No model runs — the ratio isolates the data path.
 - **num_workers=0**: preloaded data has no I/O to parallelize; worker
   processes only add IPC overhead. Measured: nw=2 is 1.12x slower.
 - **GPU utilization**: `nvidia-smi --query-gpu=utilization.gpu` sampled every
-  ~0.4s during one epoch of each path. Expect ~21% for .svs (decode-bound,
-  GPU starved) vs ~97-100% for .omnia.
+  ~0.4s during one epoch of each path. Only collected where a GPU exists — on
+  a CPU-only machine these fields are empty, and the committed
+  `benchmarks/benchmark_results.json` is such a run.
+
+  The direction is not in doubt: `.svs` spends 97.6% of an epoch decoding
+  rather than training, so its utilisation is low by construction. The
+  magnitude is a property of your model and your GPU, and this repository does
+  not yet publish a measured pair. Run `colab/omnia_vs_svs_benchmark.ipynb` on
+  a GPU runtime to obtain one for your own hardware.
 
 ## Speedup definition
 
