@@ -12,6 +12,7 @@ Usage:
     for images, labels in loader:
         ...
 """
+import csv
 from pathlib import Path
 from typing import Union, Optional
 import numpy as np
@@ -247,6 +248,147 @@ class OmniaDataset(Dataset):
         mmap_path = getattr(self, "_mmap_path", None)
         if mmap_path and mmap_path.exists():
             mmap_path.unlink(missing_ok=True)
+
+    def __del__(self):
+        self.close()
+
+
+class ManifestOmniaDataset(Dataset):
+    """One item per SLIDE (not per tile), labeled from an external manifest.
+
+    Plain `OmniaDataset` over a directory hardcodes every sample's label to
+    `0` (see above) — it's an I/O-speed layer with no concept of a
+    classification target. That's fine for benchmarking, but silently
+    unusable for training: point it at a labeled cohort and it trains
+    against a constant, which would burn a run without ever raising an
+    error.
+
+    This wraps a directory of `.omnia` containers (one per slide) plus a
+    manifest CSV in the schema `slide_id,slide_path,isup_grade,
+    dataset_source,scanner_label` (the format `build_manifest.py` in
+    omnia-AI/panda-training/kaggle writes) and resolves each container's
+    label by filename stem == slide_id. A container with no matching
+    manifest row — or a strict-mode manifest row with no matching container
+    — raises at construction time rather than falling back to a default
+    label. A silent default here is exactly the "label=0 fallback" bug this
+    class exists to rule out; it must fail loudly, at dataset-build time
+    (seconds, on the machine building the manifest), not partway through a
+    billed training run.
+
+    Each item is a slide's full tile bag (matching what a MIL trainer like
+    runpod_train_attn_mil.py's BagDataset expects: one bag == one slide) as
+    `(tiles, isup_grade, scanner_label)`, where `tiles` has the shape/dtype
+    that the underlying single-file `OmniaDataset` would return for
+    `_data` — pre-normalized float, `(N, 3, H, W)`.
+
+    Args:
+        omnia_dir: directory of `.omnia` files, one per slide, named
+            `<slide_id>.omnia`.
+        manifest_csv: path to the manifest CSV.
+        cache_mode: forwarded to each per-slide `OmniaDataset` ("ram" or
+            "mmap" — "none" isn't supported here since a full bag needs all
+            of a slide's tiles at once, not one tile at a time).
+        strict: if True, raise when a manifest row has no matching `.omnia`
+            file (catches a manifest built against a different/incomplete
+            conversion run). Default True. This is the ONLY join direction
+            checked here — the manifest is authoritative and drives what
+            gets loaded; a `.omnia` file in `omnia_dir` that no row in THIS
+            manifest mentions is not an error; the manifest may legitimately
+            be a subset of everything the directory holds (a train/val/inner
+            split all pointed at one shared container directory, each with
+            its own subset manifest, is the normal case this is built for —
+            not a bug to guard against). A directory-wide "every container
+            has a label somewhere" check belongs in build_manifest.py's
+            audit against the FULL manifest, not here against one split's.
+    """
+
+    def __init__(self, omnia_dir: Union[str, Path], manifest_csv: Union[str, Path],
+                 cache_mode: str = "ram", normalize: float = 255.0, strict: bool = True):
+        if cache_mode not in ("ram", "mmap"):
+            raise ValueError(f"ManifestOmniaDataset needs a full per-slide bag at once; "
+                              f"cache_mode must be 'ram' or 'mmap', got {cache_mode!r}")
+
+        omnia_dir = Path(omnia_dir)
+        if not omnia_dir.is_dir():
+            raise FileNotFoundError(f"{omnia_dir} is not a directory")
+
+        manifest_rows = []
+        with open(manifest_csv, newline="") as f:
+            reader = csv.DictReader(f)
+            required = {"slide_id", "isup_grade", "dataset_source", "scanner_label"}
+            if not required.issubset(set(reader.fieldnames or [])):
+                raise ValueError(f"{manifest_csv} is missing required columns "
+                                  f"(need {required}, got {reader.fieldnames})")
+            for r in reader:
+                manifest_rows.append(r)
+        if not manifest_rows:
+            raise ValueError(f"{manifest_csv} has zero rows")
+
+        from collections import Counter
+        id_counts = Counter(r["slide_id"] for r in manifest_rows)
+        dup = sorted(sid for sid, n in id_counts.items() if n > 1)
+        if dup:
+            raise ValueError(f"{manifest_csv} has duplicate slide_id(s): {dup[:10]}")
+
+        missing_container = [r["slide_id"] for r in manifest_rows
+                              if not (omnia_dir / f"{r['slide_id']}.omnia").exists()]
+        if missing_container:
+            preview = ", ".join(missing_container[:10])
+            msg = (f"{len(missing_container)} manifest row(s) in {manifest_csv} have no "
+                   f"matching .omnia file in {omnia_dir} (first 10: {preview}). This usually "
+                   f"means the conversion step didn't finish, or the manifest was built "
+                   f"against a different dataset snapshot.")
+            if strict:
+                raise KeyError(msg + " Pass strict=False to skip these rows instead "
+                                      "(not recommended without understanding why they're missing).")
+            print(f"WARNING: {msg} Skipping them (strict=False).")
+
+        self.slide_ids = []
+        self._parts = []
+        self._grades = []
+        self._scanners = []
+        self._sources = []
+        bad_grade = []
+        for r in manifest_rows:
+            sid = r["slide_id"]
+            f = omnia_dir / f"{sid}.omnia"
+            if not f.exists():
+                continue  # already reported above; only reachable when strict=False
+            grade = int(r["isup_grade"])
+            if not 0 <= grade <= 5:
+                bad_grade.append((sid, grade))
+                continue
+            self.slide_ids.append(sid)
+            self._parts.append(OmniaDataset(f, cache_mode=cache_mode, normalize=normalize))
+            self._grades.append(grade)
+            self._scanners.append(int(r["scanner_label"]))
+            self._sources.append(r["dataset_source"])
+        if bad_grade:
+            raise ValueError(f"{len(bad_grade)} manifest row(s) have isup_grade outside [0,5]: "
+                              f"{bad_grade[:10]}")
+
+    def __len__(self) -> int:
+        return len(self._parts)
+
+    def __getitem__(self, idx: int):
+        part = self._parts[idx]
+        grade = self._grades[idx]
+        scanner = self._scanners[idx]
+        if part._data is not None:
+            tiles = part._data
+        elif part._mmap is not None:
+            tiles = torch.from_numpy(part._mmap.astype(np.float32)).permute(0, 3, 1, 2) / part.normalize
+        else:
+            raise RuntimeError(
+                f"{self.slide_ids[idx]}.omnia did not preload (cache_mode='none' fallback, "
+                f"e.g. a native JP2K container this SDK can't decode) — ManifestOmniaDataset "
+                f"needs a full in-memory/mmap bag per slide, not per-tile decompression."
+            )
+        return tiles, grade, scanner
+
+    def close(self):
+        for part in getattr(self, "_parts", []):
+            part.close()
 
     def __del__(self):
         self.close()
