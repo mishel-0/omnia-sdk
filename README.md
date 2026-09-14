@@ -2,11 +2,11 @@
 
 **The data layer for tile-based whole-slide-image training.**
 **2.5x faster than NVIDIA cuCIM at loading a cohort into RAM, 2.9x smaller on
-disk — and we show you exactly where it wins and where it loses.**
+disk — with the full picture of where it wins and where it doesn't.**
 
 ## The honest headline
 
-We don't sell magic. We sell fewer idle GPU-hours for the common case in
+This project's goal is fewer idle GPU-hours for the common case in
 tile-based classification (Gleason grading, detection, PANDA-style models on
 ResNet/EfficientNet-class architectures). On that workload, **97.6% of an
 openslide epoch is spent decoding JPEG-2000 rather than training** — against
@@ -58,10 +58,10 @@ slide (CMU-1, 46,000 x 32,914 px), ResNet-18, batch 64, 1,485 tiles/epoch,
 
 ### Against cuCIM, not just openslide
 
-openslide is the wrong baseline to judge this on. Anyone doing serious WSI
-training already uses [cuCIM](https://github.com/rapidsai/cucim), NVIDIA's
-GPU-accelerated image I/O library. It is free, actively developed, and reads
-`.svs` directly. So that is the comparison that matters.
+openslide isn't the only baseline worth comparing against. Many serious WSI
+training pipelines use [cuCIM](https://github.com/rapidsai/cucim), NVIDIA's
+GPU-accelerated image I/O library — free, actively developed, and reads
+`.svs` directly. So that's a comparison worth showing too.
 
 **Filling RAM with a whole slide** — 1,408 tiles at level 1, Tesla T4:
 
@@ -72,7 +72,7 @@ GPU-accelerated image I/O library. It is free, actively developed, and reads
 | **omnia-sdk** | **0.99s** | **0.70 ms** | **14.9x** |
 
 **2.5x faster than cuCIM**, from a file 2.9x smaller on disk (177.6 MB `.svs`
--> 61.1 MB `.omnia`). This is the number to judge the project by.
+-> 61.1 MB `.omnia`). This is the number that matters most for judging the project.
 
 #### Where cuCIM wins
 
@@ -139,6 +139,14 @@ data-path win left; what limits end-to-end is how fast your GPU runs the model.
 The same code on an Apple M5 (MPS), where data was only 37% of the epoch:
 15.2x data feeding, **1.31x end-to-end**. Low end-to-end numbers mean there was
 little I/O left to remove, not that the container underperformed.
+
+## Real training, not just a benchmark
+
+The numbers above are controlled micro-benchmarks. For what this looks like
+on an actual training run — 9,128 real whole-slide images, a training
+pipeline that had previously failed on raw `.svs` I/O, and real model
+results — see
+[the PANDA case study](benchmarks/PANDA_TRAINING_CASE_STUDY.md).
 
 ## Reproduce it yourself — one command
 
