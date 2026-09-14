@@ -13,6 +13,9 @@ Usage:
         ...
 """
 import csv
+import os
+import tempfile
+import time
 from pathlib import Path
 from typing import Union, Optional
 import numpy as np
@@ -20,6 +23,75 @@ import torch
 from torch.utils.data import Dataset
 
 from .container import OmniaContainer
+
+# cache_mode="mmap" writes one temp .npy per slide via
+# tempfile.NamedTemporaryFile(delete=False, ...) straight into the shared
+# temp directory. On a large run (thousands of slides, one OmniaDataset per
+# slide) that's thousands of same-directory entries, and — the real bug this
+# was built to fix — a process killed rather than exited cleanly (SIGKILL,
+# or a crash before __del__/close() runs) leaves its files there forever
+# with no marker of which process they belonged to. Orphans from a dead run
+# then sit mixed in with a live run's own files: harmless for correctness
+# (random filenames never collide), but they inflate one shared directory
+# with thousands of stale entries, which is real overhead on a
+# network-mounted temp dir (this project always redirects tempfile.tempdir
+# off local disk — see runpod_train_attn_mil.py) and made a later run
+# measurably slower to construct.
+#
+# Fix: give each PROCESS its own subdirectory, named by PID, under the
+# temp root. A crash's orphans stay contained to that one PID's
+# subdirectory — trivial to identify and sweep (see sweep_stale_mmap_dirs)
+# without touching any live run's files, and a live run's own directory
+# never grows into the thousands-of-unrelated-entries problem this fix
+# exists for.
+_pid_mmap_dir_cache: Optional[Path] = None
+
+
+def _pid_mmap_dir() -> Path:
+    global _pid_mmap_dir_cache
+    if _pid_mmap_dir_cache is None:
+        base = Path(tempfile.gettempdir())
+        d = base / f"omnia_mmap_pid{os.getpid()}"
+        d.mkdir(parents=True, exist_ok=True)
+        _pid_mmap_dir_cache = d
+    return _pid_mmap_dir_cache
+
+
+def sweep_stale_mmap_dirs(base_dir: Optional[Union[str, Path]] = None,
+                           min_age_hours: float = 6.0) -> int:
+    """Remove orphaned omnia_mmap_pid* directories left behind by processes
+    that were killed rather than exiting cleanly (SIGKILL never runs
+    __del__/close(), so those runs' mmap temp files are never unlinked).
+
+    Age-gated, not liveness-checked: a PID can be reused by an unrelated
+    process, so "is this PID still running" is not a safe test — an old
+    directory whose PID number happens to be alive again would then never
+    get swept. Wall-clock age of the directory itself is the safe signal:
+    min_age_hours should comfortably exceed how long any real training run
+    takes, so nothing still legitimately in progress is ever a sweep
+    candidate. Call this once at the START of a new run (before any
+    OmniaDataset/ManifestOmniaDataset with cache_mode="mmap" is
+    constructed), not while one might still be running.
+
+    Returns the number of directories removed.
+    """
+    import shutil
+    base = Path(base_dir) if base_dir is not None else Path(tempfile.gettempdir())
+    if not base.is_dir():
+        return 0
+    now = time.time()
+    removed = 0
+    for d in base.glob("omnia_mmap_pid*"):
+        if not d.is_dir():
+            continue
+        try:
+            age_hours = (now - d.stat().st_mtime) / 3600.0
+        except OSError:
+            continue
+        if age_hours >= min_age_hours:
+            shutil.rmtree(d, ignore_errors=True)
+            removed += 1
+    return removed
 
 
 class OmniaDataset(Dataset):
@@ -111,9 +183,11 @@ class OmniaDataset(Dataset):
         h, w, c = self.shape
 
         if self.cache_mode == "mmap":
-            # Temp file, memory-mapped
-            import tempfile
-            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".npy")
+            # Temp file, memory-mapped — scoped under this process's own
+            # subdirectory (see _pid_mmap_dir) so a killed run's orphans
+            # never mix into a shared directory with thousands of unrelated
+            # entries from other runs.
+            tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".npy", dir=str(_pid_mmap_dir()))
             self._mmap_path = Path(tmp.name)
             tmp.close()
             # Decompress one by one into the memmap

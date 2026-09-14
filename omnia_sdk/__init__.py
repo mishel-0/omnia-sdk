@@ -14,7 +14,7 @@ __author__ = "Mishel Adnan"
 __license__ = "MIT"
 
 from .container import OmniaContainer, FormatError, IntegrityError
-from .dataset import OmniaDataset, ManifestOmniaDataset
+from .dataset import OmniaDataset, ManifestOmniaDataset, sweep_stale_mmap_dirs
 
 
 def convert(svs, out=None, **kwargs):
@@ -59,4 +59,5 @@ __all__ = [
     "IntegrityError",
     "OmniaDataset",
     "ManifestOmniaDataset",
+    "sweep_stale_mmap_dirs",
 ]
