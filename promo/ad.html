@@ -1,101 +1,219 @@
-<!doctype html><html><head><meta charset="utf-8"><style>
-html,body{margin:0;width:1920px;height:1080px;background:#000;overflow:hidden;font-family:"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;color:#f5f5f7}
+<!doctype html>
+<html><head><meta charset="utf-8"><title>omnia — film</title>
+<style>
+@font-face{font-family:D;src:local("Inter Display Bold"),local("InterDisplay-Bold");font-weight:700}
+@font-face{font-family:D;src:local("Inter Display SemiBold"),local("InterDisplay-SemiBold");font-weight:600}
+@font-face{font-family:D;src:local("Inter Display Medium"),local("InterDisplay-Medium");font-weight:500}
+@font-face{font-family:D;src:local("Inter Display Light"),local("InterDisplay-Light");font-weight:300}
+html,body{margin:0;width:1920px;height:1080px;background:#000;overflow:hidden;font-family:D,"Inter Display",Inter,sans-serif;color:#f5f5f7;-webkit-font-smoothing:antialiased}
 canvas{position:absolute;inset:0}
-</style></head><body><canvas id="c" width="1920" height="1080"></canvas><script>
-const c=document.getElementById('c'),x=c.getContext('2d'),W=1920,H=1080;
-const cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
-const eo=t=>1-Math.pow(1-cl(t),4), eio=t=>{t=cl(t);return t<.5?8*t**4:1-Math.pow(-2*t+2,4)/2};
-const seg=(t,a,b)=>cl((t-a)/(b-a));
-// fade in/out window
-const win=(t,a,b,f=.6)=>Math.min(eo(seg(t,a,a+f)),1-eio(seg(t,b-f,b)));
-function txt(s,X,Y,size,{w=600,a=1,col='#f5f5f7',al='center',ls=0,grad=null,blur=0}={}){
- if(a<=0)return;x.save();x.globalAlpha=a;x.font=`${w} ${size}px "SF Pro Display",Inter,"Helvetica Neue",Arial,sans-serif`;
- x.textAlign=al;x.textBaseline='middle';if('letterSpacing' in x)x.letterSpacing=ls+'px';
- if(blur)x.filter=`blur(${blur}px)`;
- if(grad){const m=x.measureText(s).width;const g=x.createLinearGradient(X-m/2,0,X+m/2,0);grad.forEach((cc,i)=>g.addColorStop(i/(grad.length-1),cc));x.fillStyle=g}else x.fillStyle=col;
- x.fillText(s,X,Y);x.restore()}
-// reveal: rises + unblurs
-function rv(s,X,Y,size,t,a,b,o={}){const p=eo(seg(t,a,a+.9)),q=win(t,a,b,.7);txt(s,X,Y+(1-p)*40,size,{...o,a:q,blur:(1-p)*14})}
-const G=['#ff6a3d','#ff2d78','#a24bff','#3d7bff'];
-// pseudo-random
-const R=i=>{const s=Math.sin(i*127.1+311.7)*43758.5453;return s-Math.floor(s)};
-function glow(X,Y,r,col,a){if(a<=0)return;const g=x.createRadialGradient(X,Y,0,X,Y,r);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.save();x.globalAlpha=a;x.fillStyle=g;x.fillRect(X-r,Y-r,2*r,2*r);x.restore()}
+.t{position:absolute;left:0;right:0;text-align:center;will-change:transform,opacity,filter;opacity:0;white-space:nowrap}
+.mask{overflow:hidden;display:block;padding:.08em 0}.mask>span{display:inline-block}
+.h1{font-size:132px;font-weight:600;letter-spacing:-.035em;line-height:1}
+.h2{font-size:84px;font-weight:600;letter-spacing:-.03em;line-height:1.05}
+.big{font-size:300px;font-weight:700;letter-spacing:-.05em;line-height:1}
+.sub{font-size:40px;font-weight:500;letter-spacing:-.01em;color:#a1a1a6;line-height:1.3}
+.grad{background:linear-gradient(90deg,#ff8a3d,#ff2d78 35%,#a24bff 68%,#3d8bff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dim{color:#86868b}
+#vig{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,0) 55%,rgba(0,0,0,.65) 100%);pointer-events:none}
+#grain{position:absolute;inset:0;opacity:.07;mix-blend-mode:screen}
+#scrim{position:absolute;inset:0;background:radial-gradient(ellipse at center,rgba(0,0,0,.78) 0%,rgba(0,0,0,.35) 60%,rgba(0,0,0,0) 100%);opacity:0}
+#flash{position:absolute;inset:0;background:#fff;opacity:0;mix-blend-mode:screen}
+</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<canvas id="gl" width="1920" height="1080"></canvas>
+<div id="scrim"></div>
+<div class="t" id="a1" style="top:470px"><span class="mask"><span class="h1">Billions of pixels.</span></span></div>
+<div class="t" id="a2" style="top:410px"><span class="mask"><span class="h1">All of them, waiting.</span></span></div>
+<div class="t" id="a3" style="top:580px"><span class="sub"><b style="color:#f5f5f7;font-weight:600">97.6%</b> of every openslide epoch is spent just decoding JPEG‑2000.</span></div>
+<div class="t" id="c1" style="top:150px"><span class="mask"><span class="h2">Meet <span class="grad">.omnia</span></span></span></div>
+<div class="t" id="c2" style="top:860px"><span class="sub">The data layer for whole‑slide‑image training.</span></div>
+<div class="t" id="d1" style="top:330px"><span class="mask"><span class="big grad">35.2×</span></span></div>
+<div class="t" id="d2" style="top:650px"><span class="sub" style="color:#f5f5f7">faster data loading.</span></div>
+<div class="t" id="d3" style="top:330px"><span class="mask"><span class="big grad">7.76×</span></span></div>
+<div class="t" id="d4" style="top:650px"><span class="sub" style="color:#f5f5f7">faster training epochs. Same GPU.</span></div>
+<div class="t" id="e1" style="top:140px"><span class="mask"><span class="h2">2.9× smaller.</span></span></div>
+<div class="t" id="e2" style="top:870px"><span class="sub">177.6 MB <span class="dim">→</span> <span style="color:#f5f5f7">61.1 MB</span>. Lossless options included.</span></div>
+<div class="t" id="f1" style="top:400px"><span class="mask"><span class="h1" style="font-size:190px;letter-spacing:-.05em">omnia</span></span></div>
+<div class="t" id="f2" style="top:620px"><span class="sub grad" style="font-size:48px;font-weight:600">Fewer idle GPU‑hours.</span></div>
+<div class="t" id="f3" style="top:960px"><span class="sub dim" style="font-size:26px">pip install omnia-sdk &nbsp;·&nbsp; github.com/mishel-0/omnia-sdk</span></div>
+<canvas id="grain" width="960" height="540" style="width:1920px;height:1080px"></canvas>
+<div id="vig"></div><div id="flash"></div>
+<script type="module">
+import * as THREE from 'three';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {EffectComposer} from 'three/addons/postprocessing/EffectComposer.js';
+import {RenderPass} from 'three/addons/postprocessing/RenderPass.js';
+import {UnrealBloomPass} from 'three/addons/postprocessing/UnrealBloomPass.js';
+import {OutputPass} from 'three/addons/postprocessing/OutputPass.js';
 
-function render(t){
- x.fillStyle='#000';x.fillRect(0,0,W,H);
- // S1 0-5: the problem
- rv('Your GPU is fast.',W/2,H/2,110,t,0.3,2.6);
- rv('So why is it waiting?',W/2,H/2,110,t,2.7,5.2,{col:'#86868b'});
- // S2 5.2-10.5: 97.6%
- if(t>5&&t<10.8){const a=win(t,5.3,10.6,.6);const p=eio(seg(t,5.6,8));
-  // ring
-  x.save();x.globalAlpha=a;x.lineWidth=26;x.lineCap='round';x.strokeStyle='#1d1d1f';x.beginPath();x.arc(W/2,H/2-40,250,0,7);x.stroke();
-  const g=x.createLinearGradient(W/2-250,0,W/2+250,0);G.forEach((cc,i)=>g.addColorStop(i/3,cc));x.strokeStyle=g;
-  x.beginPath();x.arc(W/2,H/2-40,250,-Math.PI/2,-Math.PI/2+p*.976*Math.PI*2);x.stroke();x.restore();
-  glow(W/2,H/2-40,420,'rgba(255,45,120,0.25)',a*p);
-  txt((p*97.6).toFixed(1)+'%',W/2,H/2-40,150,{w:700,a});
-  txt('of every openslide epoch is spent decoding JPEG‑2000.',W/2,H/2+300,46,{w:500,a:a*eo(seg(t,7.4,8.2)),col:'#a1a1a6'});
- }
- // S3 10.6-13: Introducing
- rv('Introducing',W/2,H/2-60,56,t,10.8,13.6,{col:'#86868b',w:500});
- if(t>11.3&&t<17){const a=win(t,11.4,16.8,.8);const p=eo(seg(t,11.4,12.8));
-  glow(W/2,H/2+40,700*p,'rgba(162,75,255,0.35)',a);
-  txt('.omnia',W/2,H/2+50,240*(0.9+0.1*p),{w:800,a,grad:G,ls:-6,blur:(1-p)*20});
-  txt('The data layer for whole‑slide‑image training.',W/2,H/2+230,44,{w:500,a:a*eo(seg(t,13.5,14.4)),col:'#a1a1a6'});
- }
- // S4 17-23: tile mosaic — a slide assembling
- if(t>16.8&&t<23.4){const a=win(t,17,23.2,.6);const cols=48,rows=27,s=40;
-  x.save();x.globalAlpha=a;
-  for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){const k=i*rows+j,r=R(k);
-   const d=Math.hypot(i-cols/2,(j-rows/2)*1.6)/30;const p=eo(seg(t,17.2+d*1.6+r*.4,18.2+d*1.6+r*.4));
-   const tissue=Math.sin(i*.25)+Math.cos(j*.33)+Math.sin((i+j)*.15)*1.4+r*.6>.6;
-   const hue=tissue?300+R(k+9)*40:0,l=tissue?55+R(k+3)*25:12;
-   x.fillStyle=tissue?`hsl(${hue},${45+r*30}%,${l}%)`:`hsl(0,0%,${8+r*4}%)`;
-   const z=1+(1-p)*3;x.globalAlpha=a*p;
-   x.fillRect(i*s+s/2-s*.46*z/ z,j*s+s/2-s*.46+(1-p)*-80,s*.92,s*.92)}
-  x.restore();
-  x.fillStyle=`rgba(0,0,0,${0.55*a*eo(seg(t,19.5,20.5))})`;x.fillRect(0,0,W,H);
-  rv('46,000 × 32,914 pixels.',W/2,H/2-50,104,t,19.6,23.2,{w:700});
-  rv('Ready in 1.0 second.',W/2,H/2+70,64,t,20.3,23.2,{w:500,grad:G});
- }
- // S5 23.4-30: the numbers race
- if(t>23.3&&t<30.4){const a=win(t,23.5,30.2,.6);
-  txt('Epoch time · ResNet‑18 · Tesla T4',W/2,200,40,{w:500,a,col:'#86868b'});
-  const p=eio(seg(t,24.3,27.3));const bw=1300,X0=(W-bw)/2;
-  [['.svs + openslide',20.20,'#3a3a3c',420],['.omnia',2.60,null,620]].forEach(([n,v,col,y],i)=>{
-   const L=bw*(v/20.2)*p;txt(n,X0,y-60,40,{w:600,a,al:'left',col:i?'#f5f5f7':'#a1a1a6'});
-   x.save();x.globalAlpha=a;if(col)x.fillStyle=col;else{const g=x.createLinearGradient(X0,0,X0+340,0);G.forEach((cc,k)=>g.addColorStop(k/3,cc));x.fillStyle=g}
-   x.beginPath();x.roundRect(X0,y-22,Math.max(L,1),44,22);x.fill();x.restore();
-   txt((v*p).toFixed(2)+'s',X0+L+30,y,40,{w:700,a,al:'left'})});
-  const q=eo(seg(t,27.4,28.4));
-  txt('7.76×',W/2,860,180,{w:800,a:a*q,grad:G,blur:(1-q)*16});
-  txt('faster',W/2,975,40,{w:500,a:a*q,col:'#a1a1a6'});
- }
- // S6 30.4-37: three stats
- if(t>30.3&&t<37.4){const a=win(t,30.5,37.2,.6);
-  [['35.2×','faster data loading'],['2.9×','smaller on disk'],['2.5×','faster than cuCIM']].forEach(([n,l],i)=>{
-   const st=30.7+i*.55,p=eo(seg(t,st,st+.9)),X=W/2+(i-1)*560;
-   txt(n,X,H/2-30+(1-p)*50,150,{w:800,a:a*p,grad:i==1?['#3d7bff','#a24bff']:G,blur:(1-p)*12});
-   txt(l,X,H/2+90+(1-p)*50,40,{w:500,a:a*p,col:'#a1a1a6'})});
-  rv('Measured. Reproducible. Honest about where it doesn’t win.',W/2,H-180,36,t,33.2,37.2,{w:500,col:'#6e6e73'});
- }
- // S7 37.4-43: terminal
- if(t>37.3&&t<43.4){const a=win(t,37.5,43.2,.6);const bx=360,by=330,bw=1200,bh=420;
-  x.save();x.globalAlpha=a;x.fillStyle='#111113';x.strokeStyle='#2c2c2e';x.lineWidth=2;x.beginPath();x.roundRect(bx,by,bw,bh,24);x.fill();x.stroke();
-  ['#ff5f57','#febc2e','#28c840'].forEach((cc,i)=>{x.fillStyle=cc;x.beginPath();x.arc(bx+40+i*34,by+40,10,0,7);x.fill()});x.restore();
-  const lines=['$ pip install omnia-sdk','$ python -m omnia_sdk.cli svs-convert \\','    slide.svs slide.omnia --codec jpeg','✓ 177.6 MB → 61.1 MB   ✓ CRC verified'];
-  let T=38.1;lines.forEach((s,i)=>{const n=Math.floor(cl((t-T)*38,0,s.length));T+=s.length/38+.25;
-   x.save();x.globalAlpha=a;x.font='500 36px "SF Mono",Menlo,"DejaVu Sans Mono",monospace';x.textBaseline='middle';
-   x.fillStyle=i==3?'#30d158':(s.startsWith('$')?'#f5f5f7':'#a1a1a6');x.fillText(s.slice(0,n),bx+60,by+130+i*72);x.restore()});
-  rv('One command.',W/2,190,72,t,37.7,43.2,{w:700});
- }
- // S8 43.4-50: end card
- if(t>43.3){const p=eo(seg(t,43.6,45.2)),f=1-eio(seg(t,49.3,50));
-  glow(W/2,H/2-20,900*p,'rgba(255,45,120,0.18)',f);glow(W/2-300,H/2,600*p,'rgba(61,123,255,0.18)',f);
-  txt('omnia',W/2,H/2-30,200,{w:800,a:p*f,ls:-8,blur:(1-p)*24});
-  rv('Fewer idle GPU‑hours.',W/2,H/2+120,52,t,45,50,{w:500,grad:G});
-  txt('github.com/mishel-0/omnia-sdk',W/2,H-120,30,{w:500,a:f*eo(seg(t,46.2,47)),col:'#6e6e73'});
- }
+const W=1920,H=1080;
+const cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const seg=(t,a,b)=>cl((t-a)/(b-a));
+const eo=t=>1-Math.pow(1-cl(t),5);                 // expo-ish out
+const eio=t=>{t=cl(t);return t<.5?16*t**5:1-Math.pow(-2*t+2,5)/2};
+const lerp=(a,b,p)=>a+(b-a)*p;
+const R=i=>{const s=Math.sin(i*127.1+311.7)*43758.5453;return s-Math.floor(s)};
+
+const renderer=new THREE.WebGLRenderer({canvas:document.getElementById('gl'),antialias:true,preserveDrawingBuffer:true});
+renderer.setSize(W,H,false);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.0;
+const scene=new THREE.Scene();scene.background=new THREE.Color(0x000000);
+const pm=new THREE.PMREMGenerator(renderer);scene.environment=pm.fromScene(new RoomEnvironment(),0.04).texture;
+scene.environmentIntensity=0.9;
+scene.fog=new THREE.FogExp2(0x000000,0.028);
+const cam=new THREE.PerspectiveCamera(32,W/H,0.1,400);
+
+// key + rim lights
+const key=new THREE.SpotLight(0xffffff,600,0,0.5,0.8);scene.add(key,key.target);
+const rimL=new THREE.PointLight(0xff3d8a,120,30);const rimR=new THREE.PointLight(0x3d7bff,120,30);scene.add(rimL,rimR);
+
+// ---------- tiles ----------
+const tc=document.createElement('canvas');tc.width=tc.height=256;const g=tc.getContext('2d');
+g.fillStyle='#fff';g.fillRect(0,0,256,256);
+for(let i=0;i<260;i++){const r=R(i+1),q=R(i+7),s=R(i+13);g.fillStyle=`rgba(${120+s*60},${60+r*40},${150+q*60},${.25+r*.4})`;g.beginPath();g.ellipse(r*256,q*256,3+s*7,2+r*6,s*3,0,7);g.fill()}
+for(let i=0;i<40;i++){const r=R(i+99),q=R(i+77);g.fillStyle='rgba(255,180,210,.35)';g.beginPath();g.ellipse(r*256,q*256,20+q*30,8+r*14,r*3,0,7);g.fill()}
+const tileTex=new THREE.CanvasTexture(tc);tileTex.colorSpace=THREE.SRGBColorSpace;
+const COLS=64,ROWS=36,N=COLS*ROWS,SP=1.06;
+const tileMat=new THREE.MeshPhysicalMaterial({map:tileTex,roughness:.6,metalness:0,clearcoat:.4,clearcoatRoughness:.4});
+const tiles=new THREE.InstancedMesh(new RoundedBoxGeometry(1,1,.06,2,.04),tileMat,N);
+scene.add(tiles);
+const info=[];
+for(let i=0;i<COLS;i++)for(let j=0;j<ROWS;j++){const k=info.length,r=R(k);
+  const tissue=Math.sin(i*.19)+Math.cos(j*.27)+Math.sin((i+j)*.11)*1.5+R(k+5)*.5>-.2;
+  const c=new THREE.Color().setHSL(tissue?(.83+R(k+9)*.12)%1:0, tissue?.55+r*.3:0, tissue?.55+R(k+3)*.2:.08);
+  info.push({gx:(i-COLS/2+.5)*SP,gy:(j-ROWS/2+.5)*SP,tissue,c,r,load:4.6+Math.pow(R(k+21),1.6)*9,
+    sp:R(k+31)*Math.PI*2,d:Math.hypot(i-COLS/2,(j-ROWS/2)*1.4)/40});
 }
-window.render=render;render(0);
+const dummy=new THREE.Object3D(),col=new THREE.Color(),grey=new THREE.Color(0x060607);
+
+// ---------- chip ----------
+const chip=new THREE.Group();scene.add(chip);
+const body=new THREE.Mesh(new RoundedBoxGeometry(4,.5,4,8,.22),
+  new THREE.MeshPhysicalMaterial({color:0x050506,metalness:.7,roughness:.32,clearcoat:1,clearcoatRoughness:.12,envMapIntensity:.55}));
+chip.add(body);
+const rimMat=new THREE.ShaderMaterial({uniforms:{t:{value:0},k:{value:1}},
+  vertexShader:`varying vec3 p;void main(){p=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec3 p;uniform float t;uniform float k;
+  vec3 pal(float x){x=fract(x);vec3 a=vec3(1.,.54,.24),b=vec3(1.,.18,.47),c=vec3(.64,.29,1.),d=vec3(.24,.55,1.);
+   return x<.25?mix(a,b,x*4.):x<.5?mix(b,c,(x-.25)*4.):x<.75?mix(c,d,(x-.5)*4.):mix(d,a,(x-.75)*4.);}
+  void main(){float a=atan(p.z,p.x)/6.2831+.5;gl_FragColor=vec4(pal(a+t*.08)*k,1.);}`});
+const rim=new THREE.Mesh(new RoundedBoxGeometry(4.04,.09,4.04,8,.04),rimMat);rim.position.y=-.06;chip.add(rim);
+// engraved label
+const lc=document.createElement('canvas');lc.width=lc.height=1024;const lg=lc.getContext('2d');
+await document.fonts.load('700 220px D');
+lg.font='700 230px D';lg.textAlign='center';lg.textBaseline='middle';
+const lgr=lg.createLinearGradient(200,0,824,0);['#ff8a3d','#ff2d78','#a24bff','#3d8bff'].forEach((c,i)=>lgr.addColorStop(i/3,c));
+lg.fillStyle=lgr;lg.fillText('.omnia',512,500);
+lg.font='500 46px D';lg.fillStyle='rgba(255,255,255,.45)';lg.fillText('WSI  ·  TRAINING  CONTAINER',512,680);
+lg.strokeStyle='rgba(255,255,255,.08)';lg.lineWidth=3;for(let i=0;i<14;i++){lg.beginPath();lg.moveTo(90+i*65,120);lg.lineTo(90+i*65,170);lg.stroke();lg.beginPath();lg.moveTo(90+i*65,854);lg.lineTo(90+i*65,904);lg.stroke()}
+const labTex=new THREE.CanvasTexture(lc);labTex.colorSpace=THREE.SRGBColorSpace;
+const labMat=new THREE.MeshBasicMaterial({map:labTex,transparent:true,blending:THREE.AdditiveBlending,depthWrite:false});
+const label=new THREE.Mesh(new THREE.PlaneGeometry(3.6,3.6),labMat);label.rotation.x=-Math.PI/2;label.position.y=.252;chip.add(label);
+// floor reflection-ish glow disc
+const halo=new THREE.Mesh(new THREE.PlaneGeometry(14,14),new THREE.ShaderMaterial({transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,uniforms:{k:{value:0}},
+  vertexShader:`varying vec2 u;void main(){u=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}`,
+  fragmentShader:`varying vec2 u;uniform float k;void main(){float d=length(u-.5)*2.;float a=exp(-d*d*5.)*k;gl_FragColor=vec4(vec3(.55,.22,1.)*a*.35,1.);}`}));
+halo.rotation.x=-Math.PI/2;halo.position.y=-.4;chip.add(halo);
+
+// flash sphere
+const core=new THREE.Mesh(new THREE.SphereGeometry(1,32,16),new THREE.MeshBasicMaterial({color:0xffffff}));scene.add(core);
+
+// ---------- post ----------
+const comp=new EffectComposer(renderer);comp.setSize(W,H);
+comp.addPass(new RenderPass(scene,cam));
+const bloom=new UnrealBloomPass(new THREE.Vector2(W,H),.9,.6,.82);comp.addPass(bloom);
+comp.addPass(new OutputPass());
+
+// grain
+const gc=document.getElementById('grain'),gx=gc.getContext('2d'),gimg=gx.createImageData(960,540);
+function grain(f){let s=f*9301+49297;for(let i=0;i<gimg.data.length;i+=4){s=(s*1103515245+12345)&0x7fffffff;const v=(s>>16)&255;gimg.data[i]=gimg.data[i+1]=gimg.data[i+2]=v;gimg.data[i+3]=255}gx.putImageData(gimg,0,0)}
+
+// ---------- text ----------
+const $=id=>document.getElementById(id);
+function line(id,t,a,b,{y=60,blur=10}={}){const e=$(id),p=eo(seg(t,a,a+1.1)),q=1-eio(seg(t,b-.55,b));
+  const v=Math.min(p,q);e.style.opacity=v;const inner=e.querySelector('.mask>span');
+  if(inner){inner.style.transform=`translateY(${(1-p)*105}%)`;e.style.transform=`translateY(${-(1-q)*20}px)`;e.style.filter=`blur(${(1-q)*8}px)`}
+  else{e.style.transform=`translateY(${(1-p)*y*.5-(1-q)*20}px)`;e.style.filter=`blur(${(1-p)*blur+(1-q)*8}px)`}}
+function look(px,py,pz,tx,ty,tz,roll=0){cam.position.set(px,py,pz);cam.up.set(Math.sin(roll),Math.cos(roll),0);cam.lookAt(tx,ty,tz)}
+
+// ---------- timeline (38s) ----------
+function render(t,frame){
+  grain(frame);
+  tiles.visible=false;chip.visible=false;core.visible=false;
+  let scrim=0,flash=0,exposure=1;
+  rimMat.uniforms.t.value=t;
+
+  if(t<4.2){ // S0: light seam opening
+    core.visible=true;const p=eio(seg(t,.3,3.6));core.scale.set(lerp(.001,9,p),.012,.012);
+    core.material.color.setScalar(lerp(.2,3,eo(seg(t,.3,1.6))));
+    look(0,0,12,0,0,0);exposure=1-eio(seg(t,3.6,4.2));
+  } else if(t<12.2){ // S1: the slide, sluggishly decoding
+    tiles.visible=true;const p=seg(t,4.2,12.2);
+    const collapse=seg(t,9.6,12.0);
+    for(let k=0;k<N;k++){const o=info[k];
+      let x=o.gx,y=o.gy,z=0,s=.94,rx=0,ry=0;
+      const lp=seg(t,o.load,o.load+.35);
+      if(o.tissue&&t>o.load){col.copy(o.c).multiplyScalar(lerp(2.2,1,lp))}else col.copy(grey);
+      if(!o.tissue)col.setScalar(.004);
+      if(collapse>0){const c=eio(seg(collapse,o.d*.45+o.r*.15,o.d*.45+o.r*.15+.42));
+        const ang=o.sp+c*5;const rad=lerp(Math.hypot(x,y),0,c);x=Math.cos(ang)*rad*(1-c)+x*(1-c)*0;y=Math.sin(ang)*rad*(1-c);
+        x=lerp(o.gx,x,c);y=lerp(o.gy,y,c);z=c*-2;s=.94*(1-c*.95);rx=c*o.sp*2;ry=c*3}
+      dummy.position.set(x,y,z+(t>o.load?(1-eo(lp))*.6:0));dummy.rotation.set(rx,ry,0);dummy.scale.setScalar(Math.max(s,.001));dummy.updateMatrix();
+      tiles.setMatrixAt(k,dummy.matrix);tiles.setColorAt(k,col)}
+    tiles.instanceMatrix.needsUpdate=true;tiles.instanceColor.needsUpdate=true;
+    const cp=eio(p);look(lerp(-16,6,cp),lerp(-6,2,cp),lerp(24,34,eio(seg(t,9.4,12))),lerp(-12,0,cp),lerp(-4,0,cp),0,lerp(.08,-.03,cp));
+    scrim=win(t,4.8,11.2)*.5;scene.environmentIntensity=.7;
+    core.visible=collapse>.55;const cc=seg(t,11.0,12.2);core.scale.setScalar(.01+eio(cc)*1.5);core.material.color.setScalar(4);
+    flash=Math.pow(seg(t,11.7,12.2),3);exposure=1+flash*2;
+  } else if(t<20.5){ // S2: hero chip
+    chip.visible=true;scene.environmentIntensity=.9;const p=seg(t,12.2,20.5);flash=1-eo(seg(t,12.2,13.2));
+    chip.scale.setScalar(1);chip.rotation.y=lerp(-.9,.35,eio(p));
+    const a=lerp(.15,.62,eio(p)),d=lerp(13,10.5,eo(p));
+    look(Math.sin(.2)*d*Math.cos(a),Math.sin(a)*d,Math.cos(a)*d,0,lerp(-.4,.15,eio(p)),0);
+    scene.environmentRotation.y=lerp(-1.5,2.2,eio(seg(t,12.4,20)));
+    rimMat.uniforms.k.value=lerp(.2,2.2,eo(seg(t,12.8,15)));halo.material.uniforms.k.value=eo(seg(t,13,16));
+    labMat.opacity=eo(seg(t,14,16));
+  } else if(t<29){ // S3: instant — the river of tiles
+    chip.visible=true;tiles.visible=true;scene.environmentIntensity=.7;const p=seg(t,20.5,29);
+    chip.rotation.y=lerp(.2,-.2,p);chip.scale.setScalar(1);rimMat.uniforms.k.value=2.4;halo.material.uniforms.k.value=1;labMat.opacity=1;
+    for(let k=0;k<N;k++){const o=info[k];
+      const st=20.7+o.d*1.1+o.r*.35,c=eo(seg(t,st,st+.9));
+      const tx=o.gx*.62,ty=o.gy*.62+5.2,tz=-14;
+      const x=lerp(0,tx,c),y=lerp(.2,ty,eio(c))+Math.sin(c*Math.PI)*3*(o.r-.3),z=lerp(0,tz,c);
+      dummy.position.set(x,y,z);dummy.rotation.set((1-c)*o.sp*3,(1-c)*4,0);dummy.scale.setScalar(c<=0?.001:.6*Math.min(1,c*3));dummy.updateMatrix();
+      tiles.setMatrixAt(k,dummy.matrix);col.copy(o.tissue?o.c:new THREE.Color(.03,.03,.035)).multiplyScalar(lerp(3,1,eo(seg(t,st+.6,st+1.4))));tiles.setColorAt(k,col)}
+    tiles.instanceMatrix.needsUpdate=true;tiles.instanceColor.needsUpdate=true;
+    look(lerp(3,-3,eio(p)),lerp(3.2,4.4,eio(p)),lerp(14,17,eio(p)),0,lerp(1.5,3.5,eio(p)),-4);
+    scene.environmentRotation.y=lerp(2.2,4,p);
+    scrim=Math.max(win(t,22.6,25.4),win(t,25.6,28.9))*.9;
+  } else if(t<34){ // S4: compress
+    chip.visible=true;scene.environmentIntensity=.7;const p=seg(t,29,34);
+    const sq=eio(seg(t,30,31.6));chip.scale.set(1,lerp(4.2,1,sq),1);
+    chip.rotation.y=lerp(.8,.3,eio(p));rimMat.uniforms.k.value=lerp(1.2,2.6,sq);labMat.opacity=1;halo.material.uniforms.k.value=lerp(.3,1,sq);
+    look(0,lerp(1.6,2.4,p),lerp(11,9.5,eio(p)),0,lerp(.6,0,sq),0);
+    scene.environmentRotation.y=lerp(4,5.5,p);
+  } else { // S5: end card
+    chip.visible=true;const p=seg(t,34,38.5);
+    chip.scale.setScalar(1);chip.rotation.y=lerp(.3,.9,p);rimMat.uniforms.k.value=2.2*(1-eio(seg(t,34.5,36)))+.0;labMat.opacity=1-eio(seg(t,34.4,35.6));
+    halo.material.uniforms.k.value=1-eio(seg(t,34.4,36));
+    look(lerp(4,2,p),lerp(6,9,eio(p)),lerp(7,4,p),0,0,0);scene.environmentIntensity=.5;
+    exposure=1-eio(seg(t,34.6,35.8));
+  }
+
+  // text
+  line('a1',t,5.0,7.6);line('a2',t,7.8,11.4);line('a3',t,8.6,11.4,{y:40});
+  line('c1',t,15.6,20.3);line('c2',t,16.4,20.3,{y:40});
+  line('d1',t,22.6,25.4);line('d2',t,23.0,25.4,{y:40});
+  line('d3',t,25.6,28.9);line('d4',t,26.0,28.9,{y:40});
+  line('e1',t,30.6,33.8);line('e2',t,31.2,33.8,{y:40});
+  line('f1',t,35.6,40.2);line('f2',t,36.4,40.2,{y:30});line('f3',t,37.0,40.2,{y:20});
+  $('scrim').style.opacity=scrim;$('flash').style.opacity=flash;
+  renderer.toneMappingExposure=exposure;
+  key.position.set(6,10,8);key.target.position.set(0,0,0);rimL.position.set(-6,1,-3);rimR.position.set(6,1,-3);
+  comp.render();
+}
+function win(t,a,b){return Math.min(eo(seg(t,a,a+.8)),1-eio(seg(t,b-.6,b)))}
+window.render=render;render(0,0);window.ready=true;
 </script></body></html>
