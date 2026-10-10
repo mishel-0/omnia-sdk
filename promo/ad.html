@@ -1,0 +1,101 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+html,body{margin:0;width:1920px;height:1080px;background:#000;overflow:hidden;font-family:"SF Pro Display","Inter","Helvetica Neue",Arial,sans-serif;color:#f5f5f7}
+canvas{position:absolute;inset:0}
+</style></head><body><canvas id="c" width="1920" height="1080"></canvas><script>
+const c=document.getElementById('c'),x=c.getContext('2d'),W=1920,H=1080;
+const cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const eo=t=>1-Math.pow(1-cl(t),4), eio=t=>{t=cl(t);return t<.5?8*t**4:1-Math.pow(-2*t+2,4)/2};
+const seg=(t,a,b)=>cl((t-a)/(b-a));
+// fade in/out window
+const win=(t,a,b,f=.6)=>Math.min(eo(seg(t,a,a+f)),1-eio(seg(t,b-f,b)));
+function txt(s,X,Y,size,{w=600,a=1,col='#f5f5f7',al='center',ls=0,grad=null,blur=0}={}){
+ if(a<=0)return;x.save();x.globalAlpha=a;x.font=`${w} ${size}px "SF Pro Display",Inter,"Helvetica Neue",Arial,sans-serif`;
+ x.textAlign=al;x.textBaseline='middle';if('letterSpacing' in x)x.letterSpacing=ls+'px';
+ if(blur)x.filter=`blur(${blur}px)`;
+ if(grad){const m=x.measureText(s).width;const g=x.createLinearGradient(X-m/2,0,X+m/2,0);grad.forEach((cc,i)=>g.addColorStop(i/(grad.length-1),cc));x.fillStyle=g}else x.fillStyle=col;
+ x.fillText(s,X,Y);x.restore()}
+// reveal: rises + unblurs
+function rv(s,X,Y,size,t,a,b,o={}){const p=eo(seg(t,a,a+.9)),q=win(t,a,b,.7);txt(s,X,Y+(1-p)*40,size,{...o,a:q,blur:(1-p)*14})}
+const G=['#ff6a3d','#ff2d78','#a24bff','#3d7bff'];
+// pseudo-random
+const R=i=>{const s=Math.sin(i*127.1+311.7)*43758.5453;return s-Math.floor(s)};
+function glow(X,Y,r,col,a){if(a<=0)return;const g=x.createRadialGradient(X,Y,0,X,Y,r);g.addColorStop(0,col);g.addColorStop(1,'rgba(0,0,0,0)');x.save();x.globalAlpha=a;x.fillStyle=g;x.fillRect(X-r,Y-r,2*r,2*r);x.restore()}
+
+function render(t){
+ x.fillStyle='#000';x.fillRect(0,0,W,H);
+ // S1 0-5: the problem
+ rv('Your GPU is fast.',W/2,H/2,110,t,0.3,2.6);
+ rv('So why is it waiting?',W/2,H/2,110,t,2.7,5.2,{col:'#86868b'});
+ // S2 5.2-10.5: 97.6%
+ if(t>5&&t<10.8){const a=win(t,5.3,10.6,.6);const p=eio(seg(t,5.6,8));
+  // ring
+  x.save();x.globalAlpha=a;x.lineWidth=26;x.lineCap='round';x.strokeStyle='#1d1d1f';x.beginPath();x.arc(W/2,H/2-40,250,0,7);x.stroke();
+  const g=x.createLinearGradient(W/2-250,0,W/2+250,0);G.forEach((cc,i)=>g.addColorStop(i/3,cc));x.strokeStyle=g;
+  x.beginPath();x.arc(W/2,H/2-40,250,-Math.PI/2,-Math.PI/2+p*.976*Math.PI*2);x.stroke();x.restore();
+  glow(W/2,H/2-40,420,'rgba(255,45,120,0.25)',a*p);
+  txt((p*97.6).toFixed(1)+'%',W/2,H/2-40,150,{w:700,a});
+  txt('of every openslide epoch is spent decoding JPEG‑2000.',W/2,H/2+300,46,{w:500,a:a*eo(seg(t,7.4,8.2)),col:'#a1a1a6'});
+ }
+ // S3 10.6-13: Introducing
+ rv('Introducing',W/2,H/2-60,56,t,10.8,13.6,{col:'#86868b',w:500});
+ if(t>11.3&&t<17){const a=win(t,11.4,16.8,.8);const p=eo(seg(t,11.4,12.8));
+  glow(W/2,H/2+40,700*p,'rgba(162,75,255,0.35)',a);
+  txt('.omnia',W/2,H/2+50,240*(0.9+0.1*p),{w:800,a,grad:G,ls:-6,blur:(1-p)*20});
+  txt('The data layer for whole‑slide‑image training.',W/2,H/2+230,44,{w:500,a:a*eo(seg(t,13.5,14.4)),col:'#a1a1a6'});
+ }
+ // S4 17-23: tile mosaic — a slide assembling
+ if(t>16.8&&t<23.4){const a=win(t,17,23.2,.6);const cols=48,rows=27,s=40;
+  x.save();x.globalAlpha=a;
+  for(let i=0;i<cols;i++)for(let j=0;j<rows;j++){const k=i*rows+j,r=R(k);
+   const d=Math.hypot(i-cols/2,(j-rows/2)*1.6)/30;const p=eo(seg(t,17.2+d*1.6+r*.4,18.2+d*1.6+r*.4));
+   const tissue=Math.sin(i*.25)+Math.cos(j*.33)+Math.sin((i+j)*.15)*1.4+r*.6>.6;
+   const hue=tissue?300+R(k+9)*40:0,l=tissue?55+R(k+3)*25:12;
+   x.fillStyle=tissue?`hsl(${hue},${45+r*30}%,${l}%)`:`hsl(0,0%,${8+r*4}%)`;
+   const z=1+(1-p)*3;x.globalAlpha=a*p;
+   x.fillRect(i*s+s/2-s*.46*z/ z,j*s+s/2-s*.46+(1-p)*-80,s*.92,s*.92)}
+  x.restore();
+  x.fillStyle=`rgba(0,0,0,${0.55*a*eo(seg(t,19.5,20.5))})`;x.fillRect(0,0,W,H);
+  rv('46,000 × 32,914 pixels.',W/2,H/2-50,104,t,19.6,23.2,{w:700});
+  rv('Ready in 1.0 second.',W/2,H/2+70,64,t,20.3,23.2,{w:500,grad:G});
+ }
+ // S5 23.4-30: the numbers race
+ if(t>23.3&&t<30.4){const a=win(t,23.5,30.2,.6);
+  txt('Epoch time · ResNet‑18 · Tesla T4',W/2,200,40,{w:500,a,col:'#86868b'});
+  const p=eio(seg(t,24.3,27.3));const bw=1300,X0=(W-bw)/2;
+  [['.svs + openslide',20.20,'#3a3a3c',420],['.omnia',2.60,null,620]].forEach(([n,v,col,y],i)=>{
+   const L=bw*(v/20.2)*p;txt(n,X0,y-60,40,{w:600,a,al:'left',col:i?'#f5f5f7':'#a1a1a6'});
+   x.save();x.globalAlpha=a;if(col)x.fillStyle=col;else{const g=x.createLinearGradient(X0,0,X0+340,0);G.forEach((cc,k)=>g.addColorStop(k/3,cc));x.fillStyle=g}
+   x.beginPath();x.roundRect(X0,y-22,Math.max(L,1),44,22);x.fill();x.restore();
+   txt((v*p).toFixed(2)+'s',X0+L+30,y,40,{w:700,a,al:'left'})});
+  const q=eo(seg(t,27.4,28.4));
+  txt('7.76×',W/2,860,180,{w:800,a:a*q,grad:G,blur:(1-q)*16});
+  txt('faster',W/2,975,40,{w:500,a:a*q,col:'#a1a1a6'});
+ }
+ // S6 30.4-37: three stats
+ if(t>30.3&&t<37.4){const a=win(t,30.5,37.2,.6);
+  [['35.2×','faster data loading'],['2.9×','smaller on disk'],['2.5×','faster than cuCIM']].forEach(([n,l],i)=>{
+   const st=30.7+i*.55,p=eo(seg(t,st,st+.9)),X=W/2+(i-1)*560;
+   txt(n,X,H/2-30+(1-p)*50,150,{w:800,a:a*p,grad:i==1?['#3d7bff','#a24bff']:G,blur:(1-p)*12});
+   txt(l,X,H/2+90+(1-p)*50,40,{w:500,a:a*p,col:'#a1a1a6'})});
+  rv('Measured. Reproducible. Honest about where it doesn’t win.',W/2,H-180,36,t,33.2,37.2,{w:500,col:'#6e6e73'});
+ }
+ // S7 37.4-43: terminal
+ if(t>37.3&&t<43.4){const a=win(t,37.5,43.2,.6);const bx=360,by=330,bw=1200,bh=420;
+  x.save();x.globalAlpha=a;x.fillStyle='#111113';x.strokeStyle='#2c2c2e';x.lineWidth=2;x.beginPath();x.roundRect(bx,by,bw,bh,24);x.fill();x.stroke();
+  ['#ff5f57','#febc2e','#28c840'].forEach((cc,i)=>{x.fillStyle=cc;x.beginPath();x.arc(bx+40+i*34,by+40,10,0,7);x.fill()});x.restore();
+  const lines=['$ pip install omnia-sdk','$ python -m omnia_sdk.cli svs-convert \\','    slide.svs slide.omnia --codec jpeg','✓ 177.6 MB → 61.1 MB   ✓ CRC verified'];
+  let T=38.1;lines.forEach((s,i)=>{const n=Math.floor(cl((t-T)*38,0,s.length));T+=s.length/38+.25;
+   x.save();x.globalAlpha=a;x.font='500 36px "SF Mono",Menlo,"DejaVu Sans Mono",monospace';x.textBaseline='middle';
+   x.fillStyle=i==3?'#30d158':(s.startsWith('$')?'#f5f5f7':'#a1a1a6');x.fillText(s.slice(0,n),bx+60,by+130+i*72);x.restore()});
+  rv('One command.',W/2,190,72,t,37.7,43.2,{w:700});
+ }
+ // S8 43.4-50: end card
+ if(t>43.3){const p=eo(seg(t,43.6,45.2)),f=1-eio(seg(t,49.3,50));
+  glow(W/2,H/2-20,900*p,'rgba(255,45,120,0.18)',f);glow(W/2-300,H/2,600*p,'rgba(61,123,255,0.18)',f);
+  txt('omnia',W/2,H/2-30,200,{w:800,a:p*f,ls:-8,blur:(1-p)*24});
+  rv('Fewer idle GPU‑hours.',W/2,H/2+120,52,t,45,50,{w:500,grad:G});
+  txt('github.com/mishel-0/omnia-sdk',W/2,H-120,30,{w:500,a:f*eo(seg(t,46.2,47)),col:'#6e6e73'});
+ }
+}
+window.render=render;render(0);
+</script></body></html>
