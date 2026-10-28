@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omnia-sdk"
-version = "1.0.0"
+version = "1.0.1"
 description = "PyTorch-native WSI container — 20x faster data feeding than openslide, with an auditable benchmark"
 readme = "README.md"
 license = {text = "MIT"}

@@ -443,7 +443,19 @@ class OmniaContainer:
         if own_handle:
             f = open(self.path, "rb")
             self._file = f
-            self._parse_header()
+            try:
+                self._parse_header()
+            except Exception:
+                # A malformed/corrupt file must not leak the handle we just
+                # opened. Without this, the documented worker-safe pattern
+                # (`OmniaContainer(path).get_slice(i)`, opening/closing per
+                # call) leaks one fd on every call against a bad container —
+                # across a multi-thousand-slide run that compounds into an
+                # fd exhaustion crash instead of the clean FormatError the
+                # caller should see.
+                self._file.close()
+                self._file = None
+                raise
 
         if index < 0 or index >= self.num_slices:
             if own_handle:

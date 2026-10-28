@@ -134,6 +134,25 @@ def test_index_out_of_range(tmp_path):
             c.get_slice(5)
 
 
+def test_get_slice_does_not_leak_fd_on_corrupt_open(tmp_path):
+    """The worker-safe pattern (`OmniaContainer(path).get_slice(i)`, which
+    opens and closes the file per call) must not leak a file handle when the
+    file fails to parse. Across a multi-thousand-slide run touching a bad
+    container repeatedly, an unclosed handle per failed call would compound
+    into fd exhaustion instead of a clean, retryable FormatError.
+    """
+    path = tmp_path / "corrupt.omnia"
+    path.write_bytes(b"this is not a container" * 40)
+
+    c = OmniaContainer(path)
+    # If _parse_header() raises during the per-call open, the container must
+    # roll its own handle bookkeeping back to None rather than holding onto
+    # a now-unreachable open file object.
+    with pytest.raises((FormatError, IntegrityError, Exception)):
+        c.get_slice(0)
+    assert c._file is None
+
+
 def test_write_reports_real_compression(tmp_path):
     """The stats a user is shown must describe the file on disk."""
     tiles = _tiles(30, seed=7)
