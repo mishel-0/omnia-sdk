@@ -3,13 +3,14 @@
 One RunPod **A40** (secure cloud, 9 vCPU), ResNet-18 + AMP, shuffled `DataLoader`, 2026-10-30, one run per
 number (no repeats). Rate = items per second through a real training loop; "GPU%" = share of the
 no-data-loading ceiling. Reproduce: `omnia benchmark formats <files>`.
+`.omnia` zstd = level 5, one tile per block (the default). JPEG = quality 90.
 Slides are tiles from the second pyramid level (`min_level=1`); radiology is one 2D slice per item.
 Samples are public: OpenSlide test data (https://openslide.org/demo/), OpenNeuro ds000114 (CC0),
 and the NCI Imaging Data Commons (CC BY 4.0).
 
 ## Slides: native reader (openslide) vs `.omnia` — 4 data workers
 
-| Format | Sample | openslide | `.omnia` lossless | `.omnia` JPEG q90 | Lossless speed-up |
+| Format | Sample | openslide | `.omnia` zstd (lossless) | `.omnia` JPEG q90 | Lossless speed-up |
 |---|---|---|---|---|---|
 | Aperio SVS (JPEG) | CMU-1 | 436 (18%) | 1,616 (68%) | 2,059 (86%) | **3.7x** |
 | Aperio SVS (JPEG 2000) | JP2K-33003-1 | 2,020 (86%) | 2,106 (90%) | 2,275 (97%) | 1.04x |
@@ -23,12 +24,12 @@ With **8 workers** most gaps close (openslide reaches 69-98% of the GPU on every
 gain is about needing fewer CPU cores, not a guaranteed faster epoch. Tiles read from `.omnia` were byte-identical to
 `read_region` output for every slide (`tiles identical to native: True`).
 
-Single-thread random read, items/s: openslide 92-6,553 vs `.omnia` lossless 912-29,524 (NDPI is the exception where
+Single-thread random read, items/s: openslide 92-6,553 vs `.omnia` zstd (lossless) 912-29,524 (NDPI is the exception where
 openslide is already fast at 6,553).
 
 ## Size (second pyramid level and below only, so not comparable to the source file)
 
-| Format | Source | `.omnia` lossless | `.omnia` JPEG q90 |
+| Format | Source | `.omnia` zstd (lossless) | `.omnia` JPEG q90 |
 |---|---|---|---|
 | SVS JPEG | 178 MB | 60 MB | 12 MB |
 | SVS JPEG 2000 | 64 MB | 27 MB | 5 MB |
@@ -38,7 +39,7 @@ openslide is already fast at 6,553).
 | Philips TIFF | 327 MB | 624 MB | see note |
 | MIRAX | 565 MB (zip) | 1,214 MB | 340 MB |
 
-Lossless `.omnia` is often **larger** than the source for already-compressed slides.
+zstd (lossless) `.omnia` is often **larger** than the source for already-compressed slides.
 
 ## Radiology
 
