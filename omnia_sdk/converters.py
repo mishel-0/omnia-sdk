@@ -251,12 +251,16 @@ def convert_file(src, out=None, *, fmt: Optional[str] = None, **kwargs) -> dict:
         out = out / (src.name.split(".")[0] + ".omnia")
     out.parent.mkdir(parents=True, exist_ok=True)
 
+    if fmt in ("whole-slide", "dicom-wsi"):
+        # Measured on an A40 (benchmarks/codec_results_a40.json): 16 tiles per
+        # compressed block saved no space on H&E tiles and slowed shuffled reads
+        # 6-14x, so slides default to one tile per block.
+        kwargs.setdefault("batch_size", 1)
     if fmt == "whole-slide":
         from .svs_to_omnia import svs_to_omnia
         kwargs.setdefault("verbose", False)
         stats = svs_to_omnia(src, out, **kwargs)
-        stats["format"] = "whole-slide"
-        return stats
+        return _finish(stats, src, "whole-slide")
     kwargs.pop("verbose", None)
     if fmt == "nifti":
         return nifti_to_omnia(src, out, **{k: v for k, v in kwargs.items() if k in ("axis", "batch_size", "zstd_level")})

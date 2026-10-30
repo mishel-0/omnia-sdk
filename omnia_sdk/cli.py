@@ -144,8 +144,31 @@ def main():
     conv_p.add_argument("omnia_file", nargs="?", help="Output .omnia file")
     conv_p.add_argument("--min-level", type=int, default=None, metavar="N",
                         help="Whole-slide only: first pyramid level to keep (default 1)")
-    conv_p.add_argument("--batch-size", type=int, default=16)
+    conv_p.add_argument("--batch-size", type=int, default=1,
+                        help="Tiles per compressed block (default 1: measured fastest for shuffled training; "
+                             "16 saved no space on H&E tiles and cut GPU use to 33-58%% in the A40 benchmark)")
     conv_p.add_argument("--zstd-level", type=int, default=5)
+
+    conv_p.add_argument("--codec", choices=["zstd", "jpeg"], default=None,
+                        help="Whole-slide only: zstd (lossless, default) or jpeg (lossy, ~5-12x smaller)")
+    conv_p.add_argument("--quality", type=int, default=90, metavar="0-100",
+                        help="JPEG quality for --codec jpeg (default 90)")
+
+    bench_p = subparsers.add_parser("benchmark",
+        help="Measure which codec/format trains fastest on your data")
+    bench_sub = bench_p.add_subparsers(dest="bench_kind", required=True)
+    bc = bench_sub.add_parser("codecs", help="zstd vs JPEG vs raw vs openslide on your slides",
+                              add_help=False)
+    bc.add_argument("rest", nargs=argparse.REMAINDER)
+    bf = bench_sub.add_parser("formats", help=".omnia vs each format's usual reader (NIfTI, DICOM, slides)",
+                              add_help=False)
+    bf.add_argument("rest", nargs=argparse.REMAINDER)
+
+    rec_p = subparsers.add_parser("recommend",
+        help="Quick (no GPU) check of which codec suits a slide: shortcut for 'benchmark codecs --quick'")
+    rec_p.add_argument("slides", nargs="+")
+    rec_p.add_argument("--tiles", type=int, default=2000,
+                       help="Tiles to sample (default 2000; fewer than ~1000 hides the cost of batched blocks)")
 
     verify_p = subparsers.add_parser("verify", help="Verify .omnia integrity")
     verify_p.add_argument("omnia_file", help=".omnia file")
@@ -170,6 +193,9 @@ def main():
             kw = {"batch_size": args.batch_size, "zstd_level": args.zstd_level}
             if fmt in ("whole-slide", "dicom-wsi"):
                 kw["min_level"] = 1 if args.min_level is None else args.min_level
+            if fmt == "whole-slide" and args.codec:
+                kw["codec"] = args.codec
+                kw["quality"] = args.quality
             stats = convert_file(args.input, args.omnia_file, fmt=fmt, **kw)
         except (UnsupportedFormat, FileNotFoundError, ImportError) as e:
             logging.error("%s", e)
@@ -177,6 +203,17 @@ def main():
         logging.info("Converted %s (%s): %.1f MB -> %.1f MB (%.2fx vs source)",
                      stats["source"], fmt, stats["source_bytes"] / 1e6,
                      stats["compressed_bytes"] / 1e6, stats["ratio_vs_source"] if "ratio_vs_source" in stats else stats.get("ratio_vs_svs", 0))
+        sys.exit(0)
+    elif args.command == "benchmark":
+        if args.bench_kind == "codecs":
+            from .codec_bench import main as run
+        else:
+            from .format_bench import main as run
+        run(args.rest)
+        sys.exit(0)
+    elif args.command == "recommend":
+        from .codec_bench import main as run
+        run([*args.slides, "--quick", "--tiles", str(args.tiles)])
         sys.exit(0)
     elif args.command == "svs-native":
         from .native_convert import svs_to_omnia_native
