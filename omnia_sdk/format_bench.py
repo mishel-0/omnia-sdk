@@ -194,16 +194,20 @@ def tissue_indices(container, n_max, seed=0):
     return keep
 
 
-def bench_one(path: Path, note: str, workers_list, batch, device):
+def bench_one(path: Path, note: str, workers_list, batch, device, zstd_levels=(), zstd_max_mb=300):
     fmt = detect_format(path)
     print(f"\n=== {path.name} ({fmt}) ===", flush=True)
     work = Path(tempfile.mkdtemp(prefix="omnia_fmt_"))
     src_bytes = sum(f.stat().st_size for f in path.rglob("*") if f.is_file()) if path.is_dir() else path.stat().st_size
+    if path.suffix.lower() == ".mrxs" and path.with_suffix("").is_dir():  # MIRAX keeps its data beside the index file
+        src_bytes += sum(f.stat().st_size for f in path.with_suffix("").rglob("*") if f.is_file())
     res = {"sample": path.name, "format": fmt, "note": note, "source_mb": round(src_bytes / 1e6, 2), "variants": []}
 
     variants = [("omnia", {})]
     if fmt == "whole-slide":
         variants.append(("omnia_jpeg_q90", {"codec": "jpeg", "quality": 90}))
+    if res["source_mb"] <= zstd_max_mb:  # extra zstd levels only where conversion is cheap
+        variants += [(f"omnia_zstd_L{n}", {"zstd_level": n}) for n in zstd_levels]
     kind = "rgb" if fmt in ("whole-slide", "dicom-wsi") else "volume"
 
     omnia_paths = {}
@@ -315,6 +319,10 @@ def main(argv=None):
     ap.add_argument("--note", action="append", default=[], help="source + licence, one per sample, in order")
     ap.add_argument("--batch", type=int, default=64)
     ap.add_argument("--workers", type=int, nargs="+", default=None)
+    ap.add_argument("--zstd-levels", type=int, nargs="*", default=[],
+                    help="also convert with these zstd levels (the default variant is level 5)")
+    ap.add_argument("--zstd-max-mb", type=float, default=300,
+                    help="skip the extra zstd levels for samples larger than this (conversion time)")
     ap.add_argument("--out", type=Path, default=Path("format_results.json"))
     args = ap.parse_args(argv)
 
@@ -336,7 +344,7 @@ def main(argv=None):
     results = []
     for p, n in zip(args.samples, notes):
         try:
-            results.append(bench_one(p, n, workers, args.batch, device))
+            results.append(bench_one(p, n, workers, args.batch, device, args.zstd_levels, args.zstd_max_mb))
         except Exception as e:  # one failing format must not lose the others
             import traceback
             traceback.print_exc()
