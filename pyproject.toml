@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "omnia-sdk"
-version = "1.0.1"
-description = "PyTorch-native WSI container — 20x faster data feeding than openslide, with an auditable benchmark"
+version = "1.1.0"
+description = "Medical image container for PyTorch training: whole-slide, DICOM and NIfTI to one fast, CRC-verified .omnia format, with reproducible benchmarks"
 readme = "README.md"
 license = {text = "MIT"}
 authors = [
@@ -33,6 +33,10 @@ dependencies = [
 
 [project.optional-dependencies]
 svs = ["openslide-python>=1.4.0", "Pillow>=10.0.0"]  # needed for .svs conversion + benchmark
+dicom = ["pydicom>=2.4.0"]
+dicom-wsi = ["pydicom>=2.4.0", "wsidicom>=0.20.0"]
+nifti = ["nibabel>=5.0.0"]
+all = ["openslide-python>=1.4.0", "Pillow>=10.0.0", "pydicom>=2.4.0", "wsidicom>=0.20.0", "nibabel>=5.0.0"]
 dev = ["pytest>=7.0.0"]
 
 [project.scripts]

@@ -165,3 +165,15 @@ def test_write_reports_real_compression(tmp_path):
     # rather than assumed — not that the ratio is good.
     assert stats["compressed_bytes"] == path.stat().st_size or \
            stats["compressed_bytes"] <= path.stat().st_size
+
+
+@pytest.mark.parametrize("dtype,shape", [(np.int16, (20, 12)), (np.float32, (9, 7)), (np.uint16, (8, 8, 1))])
+def test_non_uint8_and_non_rgb_tiles_roundtrip(tmp_path, dtype, shape):
+    """Radiology slices are 2D and 16-bit/float; offsets must follow the dtype."""
+    rng = np.random.default_rng(5)
+    tiles = [(rng.random(shape) * 1000).astype(dtype) for _ in range(37)]
+    path = tmp_path / "v.omnia"
+    OmniaContainer.write(path, tiles, batch_size=16)
+    with OmniaContainer(path) as c:
+        for i in (0, 15, 16, 36):
+            np.testing.assert_array_equal(c.get_slice(i), tiles[i])

@@ -31,6 +31,10 @@ VERSION = 4
 HEADER_FMT = "<4s B B H"
 HEADER_SIZE = struct.calcsize(HEADER_FMT)
 
+# Metadata keys a writer may attach. "volume" describes a radiology stack
+# (modality, spacing, rescale) and deliberately holds no patient identifiers.
+_METADATA_KEYS = ("levels", "source", "slide_dims", "volume")
+
 DEFAULT_BATCH_SIZE = 16
 DEFAULT_ZSTD_LEVEL = 5
 
@@ -57,12 +61,17 @@ _BATCH_CACHE_SIZE = 32
 
 def _compute_tile_offsets(tile_indices: list[int],
                           tile_shapes: dict[int, tuple],
-                          default_shape: tuple) -> list[int]:
-    """Return cumulative byte offsets for tiles in a batch."""
+                          default_shape: tuple,
+                          itemsize: int = 1) -> list[int]:
+    """Return cumulative byte offsets for tiles in a batch.
+
+    Sized by element count times itemsize, so 2D slices and 16-bit/float
+    tiles (radiology) are laid out correctly, not just HxWx3 uint8.
+    """
     offsets = [0]
     for idx in tile_indices:
         shape = tile_shapes.get(idx, default_shape)
-        offsets.append(offsets[-1] + shape[0] * shape[1] * shape[2])
+        offsets.append(offsets[-1] + int(np.prod(shape, dtype=np.int64)) * itemsize)
     return offsets
 
 
@@ -216,7 +225,7 @@ class OmniaContainer:
         if tile_shapes:
             meta["tile_shapes"] = {str(k): v for k, v in tile_shapes.items()}
         if metadata:
-            for k in ("levels", "source", "slide_dims"):
+            for k in _METADATA_KEYS:
                 if k in metadata:
                     meta[k] = metadata[k]
 
@@ -281,7 +290,7 @@ class OmniaContainer:
             "native_codec": native_codec,
         }
         if metadata:
-            for k in ("levels", "source", "slide_dims"):
+            for k in _METADATA_KEYS:
                 if k in metadata:
                     meta[k] = metadata[k]
 
@@ -401,7 +410,7 @@ class OmniaContainer:
         start_tile = batch_idx * self.batch_size
         batch_tile_count = min(self.batch_size, self.num_slices - start_tile)
         tile_indices = list(range(start_tile, start_tile + batch_tile_count))
-        offsets = _compute_tile_offsets(tile_indices, self.tile_shapes, self.shape)
+        offsets = _compute_tile_offsets(tile_indices, self.tile_shapes, self.shape, self.dtype.itemsize)
 
         # Read and decompress the batch chunk
         offset = self._pixel_start + self._offsets[batch_idx]

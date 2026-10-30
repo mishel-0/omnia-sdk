@@ -110,7 +110,7 @@ def info(omnia_path: str) -> bool:
 
 
 def main():
-    parser = argparse.ArgumentParser(description=".omnia SDK CLI — SVS Edition")
+    parser = argparse.ArgumentParser(description=".omnia SDK CLI")
     subparsers = parser.add_subparsers(dest="command")
 
     svs_p = subparsers.add_parser("svs-convert", help="Convert .svs to .omnia (Zstd RGB or JPEG)")
@@ -138,6 +138,15 @@ def main():
                             help="First pyramid level to keep (0=40x, 1=20x, ...). "
                                  "min-level 1 = ~8x smaller than .svs, lossless")
 
+    conv_p = subparsers.add_parser("convert",
+        help="Convert any supported medical image (slide, DICOM, NIfTI) to .omnia")
+    conv_p.add_argument("input", help="File or folder: .svs/.ndpi/.mrxs/.tif, DICOM folder, .nii/.nii.gz")
+    conv_p.add_argument("omnia_file", nargs="?", help="Output .omnia file")
+    conv_p.add_argument("--min-level", type=int, default=None, metavar="N",
+                        help="Whole-slide only: first pyramid level to keep (default 1)")
+    conv_p.add_argument("--batch-size", type=int, default=16)
+    conv_p.add_argument("--zstd-level", type=int, default=5)
+
     verify_p = subparsers.add_parser("verify", help="Verify .omnia integrity")
     verify_p.add_argument("omnia_file", help=".omnia file")
 
@@ -154,6 +163,21 @@ def main():
                                   codec=args.codec,
                                   quality=args.quality,
                                   min_level=args.min_level) else 1)
+    elif args.command == "convert":
+        from .converters import convert_file, detect_format, UnsupportedFormat
+        try:
+            fmt = detect_format(args.input)
+            kw = {"batch_size": args.batch_size, "zstd_level": args.zstd_level}
+            if fmt in ("whole-slide", "dicom-wsi"):
+                kw["min_level"] = 1 if args.min_level is None else args.min_level
+            stats = convert_file(args.input, args.omnia_file, fmt=fmt, **kw)
+        except (UnsupportedFormat, FileNotFoundError, ImportError) as e:
+            logging.error("%s", e)
+            sys.exit(1)
+        logging.info("Converted %s (%s): %.1f MB -> %.1f MB (%.2fx vs source)",
+                     stats["source"], fmt, stats["source_bytes"] / 1e6,
+                     stats["compressed_bytes"] / 1e6, stats["ratio_vs_source"] if "ratio_vs_source" in stats else stats.get("ratio_vs_svs", 0))
+        sys.exit(0)
     elif args.command == "svs-native":
         from .native_convert import svs_to_omnia_native
         from pathlib import Path
