@@ -153,8 +153,10 @@ def fresh(reader):
     """A reader with no open file handle. Handles must never be shared with
     DataLoader workers forked later: they would share one file position."""
     import copy
+    if hasattr(reader, "fresh"):
+        return reader.fresh()
     r = copy.copy(reader)
-    for attr in ("m", "c", "s"):
+    for attr in ("m", "c", "s", "img"):
         if hasattr(r, attr):
             setattr(r, attr, None)
     return r
@@ -188,7 +190,7 @@ def make_model(device):
     return m, torch.optim.SGD(m.parameters(), lr=0.01, momentum=0.9)
 
 
-def train_epochs(batches, device, steps_hint=None):
+def train_epochs(batches, device, prep=None):
     """Run train steps over an iterable of uint8 NCHW batches; return images/s per epoch."""
     import torch
     model, opt = make_model(device)
@@ -199,8 +201,12 @@ def train_epochs(batches, device, steps_hint=None):
     for epoch in range(3):  # 1 warm-up + 2 measured
         seen, t0 = 0, None
         for x in batches():
-            x = x.to(device, non_blocking=True).float()
-            x = ((x - mean) / std).contiguous(memory_format=torch.channels_last)
+            x = x.to(device, non_blocking=True)
+            if prep is not None:
+                x = prep(x)
+            else:
+                x = ((x.float() - mean) / std)
+            x = x.contiguous(memory_format=torch.channels_last)
             y = torch.randint(0, 6, (x.shape[0],), device=device)
             with torch.autocast(device, enabled=device == "cuda"):
                 loss = torch.nn.functional.cross_entropy(model(x), y)
