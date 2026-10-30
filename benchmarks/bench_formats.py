@@ -40,6 +40,14 @@ def _median_time(fn, repeats):
     return statistics.median(times)
 
 
+def _omnia_cold(path, indices):
+    """Read `indices` from a freshly opened container, so the batch cache from
+    a previous run cannot make a repeat look faster than a real first read."""
+    with OmniaContainer(path) as c:
+        for i in indices:
+            c.get_slice(i)
+
+
 def _native_reader(path: Path, fmt: str):
     """Return (n_items, read_fn(i)) for the format's usual library."""
     if fmt == "nifti":
@@ -99,9 +107,9 @@ def bench_one(path: Path, note: str, repeats: int, random_n: int) -> dict:
         }
         raw = {
             "sequential": (_median_time(lambda: [read_native(i) for i in seq], repeats),
-                           _median_time(lambda: [c.get_slice(i) for i in seq], repeats)),
+                           _median_time(lambda: _omnia_cold(out, seq), repeats)),
             "random": (_median_time(lambda: [read_native(i) for i in idx], repeats),
-                       _median_time(lambda: [c.get_slice(i) for i in idx], repeats)),
+                       _median_time(lambda: _omnia_cold(out, idx), repeats)),
         }
         for k, (nat, om) in raw.items():
             res[f"{k}_s"] = {"native": round(nat, 4), "omnia": round(om, 4)}
