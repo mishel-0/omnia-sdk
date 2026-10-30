@@ -107,3 +107,18 @@ def test_unsupported_input_is_a_clear_error(tmp_path):
     f.write_text("hello")
     with pytest.raises(UnsupportedFormat):
         detect_format(f)
+
+
+def test_jpeg_conversion_keeps_tiles_larger_than_256(tmp_path):
+    """Regression: JPEG mode used to crop every tile to 256x256."""
+    pytest.importorskip("openslide")
+    from PIL import Image
+    import io
+    rng = np.random.default_rng(2)
+    img = rng.integers(0, 256, (1024, 1024, 3), dtype=np.uint8)
+    src = tmp_path / "big.tif"
+    tifffile.imwrite(str(src), img, tile=(512, 512), photometric="rgb", compression=None)
+    convert(src, tmp_path / "big.omnia", min_level=0, codec="jpeg", quality=95)
+    with OmniaContainer(tmp_path / "big.omnia") as c:
+        tile = np.asarray(Image.open(io.BytesIO(c.get_slice(0).tobytes())).convert("RGB"))
+    assert tile.shape == (512, 512, 3)

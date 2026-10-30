@@ -120,10 +120,16 @@ def svs_to_omnia(svs_path: Path, omnia_path: Path,
         # Lossy path: re-encode every tile as JPEG (padded to 256x256 so
         # edge tiles stay uniform for the dataset preload).
         def jpeg_bytes():
+            # Pad edge tiles up to the first (full-size) tile, whatever that size is.
+            # This used to pad to a fixed 256x256, which silently CROPPED any tile
+            # larger than 256 px (Philips TIFF uses bigger tiles).
+            target = None
             for arr in tile_generator():
                 img = Image.fromarray(arr)
-                if img.size != (256, 256):
-                    canvas = Image.new("RGB", (256, 256), (0, 0, 0))
+                if target is None:
+                    target = img.size
+                if img.size[0] < target[0] or img.size[1] < target[1]:
+                    canvas = Image.new("RGB", target, (0, 0, 0))
                     canvas.paste(img, (0, 0))
                     img = canvas
                 buf = io.BytesIO()

@@ -138,6 +138,8 @@ class DS:
 def loader_rate(items, kind, workers, batch, device):
     import torch
     from torch.utils.data import DataLoader
+    # Need at least a few batches per epoch for a rate to be measurable.
+    batch = max(4, min(batch, len(items) // 4))
     dl = DataLoader(DS(items, kind), batch_size=batch, shuffle=True, num_workers=workers,
                     pin_memory=device == "cuda", drop_last=True, persistent_workers=workers > 0)
     try:
