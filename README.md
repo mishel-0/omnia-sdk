@@ -46,6 +46,8 @@ codec, a checksum on every block. Convert once, train many times.
 
 ### 1. Install (one line, no admin rights)
 
+Full step-by-step guide for each system, including installing Python, updating and uninstalling: **[docs/INSTALL.md](docs/INSTALL.md)**.
+
 **macOS / Linux**
 
 ```bash
