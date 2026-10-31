@@ -6,6 +6,7 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/mishel-0/omnia-sdk/stargazers"><img src="https://img.shields.io/github/stars/mishel-0/omnia-sdk?style=flat&color=5b3fa8" alt="GitHub stars"/></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-2ea44f" alt="MIT license"/></a>
   <img src="https://img.shields.io/badge/python-3.11%2B-3776ab" alt="Python 3.11+"/>
   <img src="https://img.shields.io/badge/PyTorch-Dataset-ee4c2c" alt="PyTorch Dataset"/>
@@ -19,12 +20,13 @@
   <a href="#command-line">CLI</a> ·
   <a href="#python-api">Python API</a> ·
   <a href="#how-it-works">How it works</a> ·
-  <a href="#contributing">Contributing</a>
+  <a href="#roadmap">Roadmap</a> ·
+  <a href="#community">Community</a>
 </p>
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/charts/hero_speedup_dark.png">
-  <img src="benchmarks/charts/hero_speedup_light.png" alt="Training throughput, original slide file vs .omnia" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/hero-dark.svg">
+  <img src="assets/hero-light.svg" alt="Slide tiles streaming into a CRC-verified .omnia container" width="100%">
 </picture>
 
 ---
@@ -43,6 +45,8 @@ codec, a checksum on every block. Convert once, train many times.
 - **Measured, not claimed.** Every number below comes from a script in this repo you can run on your own data.
 
 ## Quick start
+
+<img src="assets/terminal.svg" alt="Install, convert, verify and train in four commands" width="100%"/>
 
 ### 1. Install (one line, no admin rights)
 
@@ -117,6 +121,11 @@ for tiles, labels in loader:
 Same training loop, same GPU; only the file format changes. NVIDIA A40 (48 GB), 9 vCPU, ResNet-18 with mixed
 precision, batch 64, 4 DataLoader workers, shuffled tiles. Public sample data (OpenSlide test slides, an OpenNeuro MRI,
 NCI Imaging Data Commons DICOM).
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/race-dark.svg">
+  <img src="assets/race-light.svg" alt="Training throughput per format, original file vs .omnia" width="100%">
+</picture>
 
 ### Training time
 
@@ -219,18 +228,38 @@ ds = omnia_sdk.ManifestOmniaDataset("cohort/", "labels.csv")   # one item per sl
 - **Volumes** store one block per 2D slice in the scan's own dtype (no rescaling), with spacing and rescale values in the metadata.
 - **Codecs:** zstd (lossless, default) or JPEG (lossy). One tile per block by default: packing 16 tiles into a block saved no space and made shuffled reads 6–14× slower ([`docs/CODECS.md`](docs/CODECS.md)).
 
-## Contributing
+## Roadmap
 
-Bug reports, new format readers and benchmark results from other hardware are all welcome.
+- [x] Whole-slide (SVS, NDPI, MRXS, SCN, TIFF), DICOM series, DICOM-WSI, NIfTI
+- [x] One-line installers for macOS, Linux and Windows
+- [ ] `pip install omnia-sdk` from PyPI
+- [ ] OME-TIFF, Zeiss CZI, NRRD and MHA readers
+- [ ] MONAI and timm dataset adapters
+- [ ] Multi-slide sharded files for cloud object storage
+- [ ] Benchmarks from more GPUs (yours?)
 
-```bash
-git clone https://github.com/mishel-0/omnia-sdk.git && cd omnia-sdk
-pip install -e ".[all,train,benchmark,dev]"
-pytest
-```
+Have an idea? [Open a format request](https://github.com/mishel-0/omnia-sdk/issues/new?template=format.yml).
 
-Adding a format: write a reader in `omnia_sdk/converters.py`, add a round-trip test in `tests/test_convert.py`
-that proves pixels come back unchanged, and run `omnia benchmark formats` on a public sample.
+## Community
+
+omnia-sdk is young and built in the open. The fastest way to help:
+
+- **Star the repo** so other people training on medical images can find it.
+- **Share a benchmark** from your hardware, faster or slower: [benchmark issue](https://github.com/mishel-0/omnia-sdk/issues/new?template=benchmark.yml).
+- **Add a format** or fix a bug: see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+<a href="https://github.com/mishel-0/omnia-sdk/graphs/contributors"><img src="https://contrib.rocks/image?repo=mishel-0/omnia-sdk" alt="Contributors"/></a>
+
+<a href="https://star-history.com/#mishel-0/omnia-sdk&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=mishel-0/omnia-sdk&type=Date&theme=dark"/>
+    <img src="https://api.star-history.com/svg?repos=mishel-0/omnia-sdk&type=Date" alt="Star history" width="600"/>
+  </picture>
+</a>
+
+### Citing
+
+If omnia-sdk helps your research, please cite it ([`CITATION.cff`](CITATION.cff), or "Cite this repository" on GitHub).
 
 ## License
 

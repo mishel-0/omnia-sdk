@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 434" width="960" height="434" role="img" aria-label="Training throughput, original file vs .omnia">
+<style>
+text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+@keyframes grow{0%{transform:scaleX(0)}25%,88%{transform:scaleX(1)}100%{transform:scaleX(0)}}
+@keyframes show{0%,20%{opacity:0}30%,86%{opacity:1}100%{opacity:0}}
+.bar{transform-box:fill-box;transform-origin:left;animation:grow 7s cubic-bezier(.3,.7,.2,1) infinite}
+.lab{animation:show 7s infinite}
+@media (prefers-reduced-motion: reduce){*{animation:none!important}}
+</style>
+<rect width="960" height="434" fill="#ffffff"/>
+<text x="40" y="34" font-size="18" font-weight="700" fill="#1b1d2a">Training throughput, same GPU, same loop</text>
+<rect x="730" y="22" width="12" height="12" rx="2" fill="#c9cbd8"/><text x="748" y="33" font-size="13" fill="#6a6f85">original file</text>
+<rect x="850" y="22" width="12" height="12" rx="2" fill="#5b3fa8"/><text x="868" y="33" font-size="13" fill="#6a6f85">.omnia</text>
+<text x="314" y="85" text-anchor="end" font-size="14" fill="#1b1d2a">Aperio SVS · JPEG 2000</text>
+<rect class="bar" style="animation-delay:0.00s" x="330" y="70" width="55.2" height="10" rx="2" fill="#c9cbd8"/>
+<rect class="bar" style="animation-delay:0.25s" x="330" y="84" width="470.0" height="10" rx="2" fill="#5b3fa8"/>
+<text class="lab" style="animation-delay:1.30s" x="820" y="91" font-size="20" font-weight="700" fill="#5b3fa8">8.5×</text><text x="314" y="139" text-anchor="end" font-size="14" fill="#1b1d2a">Aperio SVS · 20x</text>
+<rect class="bar" style="animation-delay:0.15s" x="330" y="124" width="85.9" height="10" rx="2" fill="#c9cbd8"/>
+<rect class="bar" style="animation-delay:0.40s" x="330" y="138" width="353.5" height="10" rx="2" fill="#5b3fa8"/>
+<text class="lab" style="animation-delay:1.45s" x="820" y="145" font-size="20" font-weight="700" fill="#5b3fa8">4.1×</text><text x="314" y="193" text-anchor="end" font-size="14" fill="#1b1d2a">3DHISTECH MIRAX</text>
+<rect class="bar" style="animation-delay:0.30s" x="330" y="178" width="104.8" height="10" rx="2" fill="#c9cbd8"/>
+<rect class="bar" style="animation-delay:0.55s" x="330" y="192" width="399.3" height="10" rx="2" fill="#5b3fa8"/>
+<text class="lab" style="animation-delay:1.60s" x="820" y="199" font-size="20" font-weight="700" fill="#5b3fa8">3.8×</text><text x="314" y="247" text-anchor="end" font-size="14" fill="#1b1d2a">Leica SCN</text>
+<rect class="bar" style="animation-delay:0.45s" x="330" y="232" width="152.8" height="10" rx="2" fill="#c9cbd8"/>
+<rect class="bar" style="animation-delay:0.70s" x="330" y="246" width="419.8" height="10" rx="2" fill="#5b3fa8"/>
+<text class="lab" style="animation-delay:1.75s" x="820" y="253" font-size="20" font-weight="700" fill="#5b3fa8">2.7×</text><text x="314" y="301" text-anchor="end" font-size="14" fill="#1b1d2a">NIfTI MRI (.nii.gz)</text>
+<rect class="bar" style="animation-delay:0.60s" x="330" y="286" width="194.7" height="10" rx="2" fill="#c9cbd8"/>
+<rect class="bar" style="animation-delay:0.85s" x="330" y="300" width="381.9" height="10" rx="2" fill="#5b3fa8"/>
+<text class="lab" style="animation-delay:1.90s" x="820" y="307" font-size="20" font-weight="700" fill="#5b3fa8">2.0×</text><text x="314" y="355" text-anchor="end" font-size="14" fill="#1b1d2a">Aperio SVS · 40x</text>
+<rect class="bar" style="animation-delay:0.75s" x="330" y="340" width="254.4" height="10" rx="2" fill="#c9cbd8"/>
+<rect class="bar" style="animation-delay:1.00s" x="330" y="354" width="469.7" height="10" rx="2" fill="#5b3fa8"/>
+<text class="lab" style="animation-delay:2.05s" x="820" y="361" font-size="20" font-weight="700" fill="#5b3fa8">1.8×</text>
+<text x="40" y="420" font-size="12" fill="#6a6f85">NVIDIA A40 · ResNet-18 AMP · batch 64 · 4 workers · shuffled tiles · benchmarks/headline.json</text>
+</svg>

@@ -1,0 +1,14 @@
+name: Format request
+description: Ask for a new input format
+labels: [format]
+body:
+  - type: input
+    id: format
+    attributes: {label: Format and file extension}
+    validations: {required: true}
+  - type: input
+    id: sample
+    attributes: {label: Link to a public sample file}
+  - type: textarea
+    id: why
+    attributes: {label: How you train on it today}

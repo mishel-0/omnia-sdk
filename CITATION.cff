@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+message: "If you use omnia-sdk in your research, please cite it as below."
+title: "omnia-sdk: a training-oriented container for medical images"
+authors:
+  - family-names: Adnan
+    given-names: Mishel
+version: 1.1.0
+license: MIT
+repository-code: "https://github.com/mishel-0/omnia-sdk"
+keywords: [medical imaging, whole-slide imaging, DICOM, NIfTI, PyTorch, digital pathology]

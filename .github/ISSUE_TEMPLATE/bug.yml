@@ -1,0 +1,15 @@
+name: Bug report
+description: Something failed or gave wrong pixels
+labels: [bug]
+body:
+  - type: input
+    id: format
+    attributes: {label: File format, placeholder: "e.g. Aperio SVS, DICOM CT series, NIfTI"}
+    validations: {required: true}
+  - type: textarea
+    id: command
+    attributes: {label: Command and full output, render: shell}
+    validations: {required: true}
+  - type: textarea
+    id: doctor
+    attributes: {label: Output of `omnia doctor`, render: shell}
