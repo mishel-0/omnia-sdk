@@ -91,6 +91,46 @@
         "original_file": 24.7,
         "omnia": 13.4
       }
+    },
+    {
+      "format": "NIfTI brain MRI (.nii.gz)",
+      "throughput_tiles_per_s": {
+        "original_file": 1032,
+        "omnia": 2024
+      },
+      "speedup": 1.96,
+      "epoch_time_seconds": {
+        "original_file": 96.9,
+        "omnia": 49.4
+      },
+      "time_for_20_epochs_minutes": {
+        "original_file": 32.3,
+        "omnia": 16.5
+      }
     }
-  ]
+  ],
+  "nifti_note": "NIfTI native throughput differed between runs (369 and 1,695 slices/s), so its speed-up ranged 1.2x to 5.3x; the row uses the mean.",
+  "dicom": {
+    "training": "tie: CT 1,049 vs 921 slices/s, MR 1,847 vs 1,793 (GPU-bound); DICOM whole-slide slower on a 57-tile sample (1,191 vs 564)",
+    "single_thread_read_slices_per_s": [
+      {
+        "format": "NIfTI MRI slice (nibabel, .nii.gz)",
+        "native": 15.6,
+        "omnia": 20331,
+        "speedup": 1303.3
+      },
+      {
+        "format": "DICOM MR series (pydicom)",
+        "native": 821,
+        "omnia": 27640,
+        "speedup": 33.7
+      },
+      {
+        "format": "DICOM CT series (pydicom)",
+        "native": 844,
+        "omnia": 16422,
+        "speedup": 19.5
+      }
+    ]
+  }
 }
