@@ -10,6 +10,7 @@ whole-slide, NIfTI). PyTorch is optional and only needed to train from `.omnia` 
 - [Linux](#linux)
 - [Windows](#windows)
 - [Install with PyTorch](#install-with-pytorch)
+- [Install from GitHub (git clone)](#install-from-github-git-clone)
 - [Manual install with pip](#manual-install-with-pip)
 - [Update](#update) · [Uninstall](#uninstall) · [Troubleshooting](#troubleshooting)
 
@@ -190,6 +191,88 @@ irm https://raw.githubusercontent.com/mishel-0/omnia-sdk/main/install.ps1 | iex
 For an NVIDIA GPU, install the CUDA build of PyTorch afterwards by following the selector at
 <https://pytorch.org/get-started/locally/>, using the Python inside `~/.omnia/venv`
 (Windows: `%USERPROFILE%\.omnia\venv\Scripts\python.exe`).
+
+---
+
+## Install from GitHub (git clone)
+
+Clone the repository and install from source. Use this to read or change the code, or to get the very latest commit.
+
+### macOS
+
+```bash
+# 1. Install git and Python 3.11+ (skip what you already have)
+xcode-select --install          # provides git
+brew install python@3.12        # or download from python.org
+
+# 2. Clone
+git clone https://github.com/mishel-0/omnia-sdk.git
+cd omnia-sdk
+
+# 3. Create an environment and install
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e ".[all]"
+
+# 4. Check
+omnia doctor
+```
+
+### Linux (Ubuntu / Debian)
+
+```bash
+# 1. Install git and Python 3.11+
+sudo apt update
+sudo apt install -y git python3 python3-venv python3-pip
+
+# 2. Clone
+git clone https://github.com/mishel-0/omnia-sdk.git
+cd omnia-sdk
+
+# 3. Create an environment and install
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip
+pip install -e ".[all]"
+
+# 4. Check
+omnia doctor
+```
+
+(Fedora: `sudo dnf install -y git python3.12`. Ubuntu 22.04: add Python 3.12 from the deadsnakes PPA as in the [Linux](#linux) section and use `python3.12 -m venv .venv`.)
+
+### Windows (PowerShell)
+
+```powershell
+# 1. Install git and Python 3.11+ (skip what you already have), then open a new PowerShell window
+winget install -e --id Git.Git
+winget install -e --id Python.Python.3.12
+
+# 2. Clone
+git clone https://github.com/mishel-0/omnia-sdk.git
+cd omnia-sdk
+
+# 3. Create an environment and install
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1      # if blocked: Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+python -m pip install --upgrade pip
+pip install -e ".[all]"
+
+# 4. Check
+omnia doctor
+```
+
+### Next steps (all systems)
+
+```bash
+pip install -e ".[all,train,benchmark,dev]"   # PyTorch, benchmarks and the test suite
+pytest                                         # run the tests
+git pull && pip install -e ".[all]"            # update to the latest version later
+```
+
+Each time you open a new terminal, activate the environment first (`source .venv/bin/activate`, or
+`.\.venv\Scripts\Activate.ps1` on Windows) so the `omnia` command is available.
 
 ---
 

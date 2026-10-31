@@ -65,6 +65,15 @@ environment in `~/.omnia`, installs every format reader (OpenSlide, pydicom, wsi
 command to your PATH. It does not install PyTorch unless you ask (`OMNIA_WITH_TORCH=1`), so the download stays small.
 Run it again to update.
 
+From GitHub source (any system):
+
+```bash
+git clone https://github.com/mishel-0/omnia-sdk.git
+cd omnia-sdk
+python3 -m venv .venv && source .venv/bin/activate      # Windows: py -3.12 -m venv .venv ; .\.venv\Scripts\Activate.ps1
+pip install -e ".[all]"
+```
+
 Prefer pip?
 
 ```bash
