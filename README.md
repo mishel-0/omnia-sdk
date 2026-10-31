@@ -1,14 +1,32 @@
-# omnia-sdk
+<h1 align="center">omnia-sdk</h1>
 
-**One fast, verifiable container for medical images used in ML training.**
-Convert whole-slide images (SVS, NDPI, MRXS, SCN, TIFF), DICOM and NIfTI to `.omnia`, then feed PyTorch from it.
+<p align="center"><b>Stop letting slide decoding starve your GPU.</b><br/>
+Convert whole-slide images, DICOM and NIfTI into one fast, verifiable <code>.omnia</code> file and train straight from it.</p>
 
-<p align="center"><img src="benchmarks/charts/linkedin_1200x627.png" alt=".omnia vs the original slide file: training throughput" width="100%"/></p>
+<p align="center">
+  <img src="https://img.shields.io/badge/license-MIT-green" alt="MIT"/>
+  <img src="https://img.shields.io/badge/python-3.11%2B-blue" alt="Python 3.11+"/>
+  <img src="https://img.shields.io/badge/PyTorch-ready-ee4c2c" alt="PyTorch"/>
+  <img src="https://img.shields.io/badge/formats-SVS%20%C2%B7%20MRXS%20%C2%B7%20SCN%20%C2%B7%20NDPI%20%C2%B7%20TIFF%20%C2%B7%20DICOM%20%C2%B7%20NIfTI-6366f1" alt="formats"/>
+</p>
 
-On a shuffled training loop, reading tiles from `.omnia` kept the GPU busier than reading the original slide with
-OpenSlide: **8.5x** on a JPEG 2000 Aperio SVS at full resolution, **4.1x** on a 20x Aperio SVS, **3.8x** on MIRAX, **2.7x** on Leica SCN.
-It is **not** faster everywhere (NDPI and DICOM CT/MR are ties) and the speed-up shrinks when you have plenty of CPU cores.
-[Full results](docs/FORMATS.md) · [raw JSON](benchmarks/results.json) · [headline chart](benchmarks/charts/00_headline_normal_vs_omnia.png).
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="benchmarks/charts/hero_speedup_dark.png">
+  <img src="benchmarks/charts/hero_speedup_light.png" alt="Training throughput: up to 8.5x faster from .omnia than from the original slide file" width="100%">
+</picture>
+
+```bash
+pip install "omnia-sdk[all] @ git+https://github.com/mishel-0/omnia-sdk.git"
+omnia convert slide.svs        # -> slide.omnia, then train from it
+```
+
+## Why
+
+- **Faster training where decoding is the bottleneck.** Measured 1.8x to 8.5x on Aperio SVS, MIRAX and Leica SCN with the same model and GPU ([full results](docs/FORMATS.md)).
+- **Exact.** Tiles come back identical to OpenSlide; NIfTI, CT and MR slices bit-for-bit. Every block is CRC-checked.
+- **One format for your whole pipeline.** Slides, DICOM series, DICOM whole-slide and NIfTI behind one `omnia convert` and one PyTorch dataset.
+- **Private by default.** Converting DICOM keeps only acquisition fields; patient name, ID and dates never enter the file.
+- **Measure it on your own data** in a minute: `omnia recommend slide.svs`, or the full run with `omnia benchmark formats`.
 
 ## Install
 
