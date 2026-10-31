@@ -1,0 +1,254 @@
+{
+  "claim": ".omnia vs the file you would normally train from, same machine, same loop",
+  "setup": "NVIDIA A40 (9 vCPU), ResNet-18 + AMP, batch 64, shuffled DataLoader, 4 workers; .omnia = lossless default",
+  "rows": [
+    {
+      "format": "Aperio SVS, full-res 40x (JPEG)",
+      "section": "slides at full resolution",
+      "normal_items_per_s": 1348.3,
+      "omnia_items_per_s": 2489.0,
+      "speedup": 1.85,
+      "normal_range": [
+        1348.3,
+        1348.3
+      ],
+      "omnia_range": [
+        2489.0,
+        2489.0
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 74,
+        "omnia": 40
+      }
+    },
+    {
+      "format": "Aperio SVS, full-res (JPEG 2000)",
+      "section": "slides at full resolution",
+      "normal_items_per_s": 292.3,
+      "omnia_items_per_s": 2490.7,
+      "speedup": 8.52,
+      "normal_range": [
+        292.3,
+        292.3
+      ],
+      "omnia_range": [
+        2490.7,
+        2490.7
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 342,
+        "omnia": 40
+      }
+    },
+    {
+      "format": "Aperio SVS 20x (JPEG)",
+      "section": "slides, 20x and below",
+      "normal_items_per_s": 455.1,
+      "omnia_items_per_s": 1873.5,
+      "speedup": 4.12,
+      "normal_range": [
+        435.9,
+        474.3
+      ],
+      "omnia_range": [
+        1616.4,
+        2130.7
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 220,
+        "omnia": 53
+      }
+    },
+    {
+      "format": "Aperio SVS 20x (JPEG 2000)",
+      "section": "slides, 20x and below",
+      "normal_items_per_s": 1523.1,
+      "omnia_items_per_s": 1807.0,
+      "speedup": 1.19,
+      "normal_range": [
+        1025.9,
+        2020.3
+      ],
+      "omnia_range": [
+        1507.9,
+        2106.1
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 66,
+        "omnia": 55
+      }
+    },
+    {
+      "format": "Hamamatsu NDPI",
+      "section": "slides, 20x and below",
+      "normal_items_per_s": 2961.6,
+      "omnia_items_per_s": 2825.4,
+      "speedup": 0.95,
+      "normal_range": [
+        2484.8,
+        3438.4
+      ],
+      "omnia_range": [
+        2482.7,
+        3168.1
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 34,
+        "omnia": 35
+      }
+    },
+    {
+      "format": "Leica SCN",
+      "section": "slides, 20x and below",
+      "normal_items_per_s": 809.7,
+      "omnia_items_per_s": 2224.8,
+      "speedup": 2.75,
+      "normal_range": [
+        797.7,
+        821.6
+      ],
+      "omnia_range": [
+        2166.3,
+        2283.2
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 124,
+        "omnia": 45
+      }
+    },
+    {
+      "format": "Generic TIFF",
+      "section": "slides, 20x and below",
+      "normal_items_per_s": 1625.3,
+      "omnia_items_per_s": 2192.7,
+      "speedup": 1.35,
+      "normal_range": [
+        1535.0,
+        1715.6
+      ],
+      "omnia_range": [
+        2041.2,
+        2344.2
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 62,
+        "omnia": 46
+      }
+    },
+    {
+      "format": "Philips TIFF",
+      "section": "slides, 20x and below",
+      "normal_items_per_s": 475.1,
+      "omnia_items_per_s": 616.6,
+      "speedup": 1.3,
+      "normal_range": [
+        469.6,
+        480.7
+      ],
+      "omnia_range": [
+        612.7,
+        620.5
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 210,
+        "omnia": 162
+      }
+    },
+    {
+      "format": "3DHISTECH MIRAX",
+      "section": "slides, 20x and below",
+      "normal_items_per_s": 555.4,
+      "omnia_items_per_s": 2115.9,
+      "speedup": 3.81,
+      "normal_range": [
+        544.5,
+        566.2
+      ],
+      "omnia_range": [
+        1940.8,
+        2291.1
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 180,
+        "omnia": 47
+      }
+    },
+    {
+      "format": "NIfTI MRI (.nii.gz)",
+      "section": "radiology",
+      "normal_items_per_s": 1031.8,
+      "omnia_items_per_s": 2023.9,
+      "speedup": 1.96,
+      "normal_range": [
+        368.8,
+        1694.8
+      ],
+      "omnia_range": [
+        1951.4,
+        2096.4
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 97,
+        "omnia": 49
+      }
+    },
+    {
+      "format": "DICOM MR series",
+      "section": "radiology",
+      "normal_items_per_s": 1847.0,
+      "omnia_items_per_s": 1793.3,
+      "speedup": 0.97,
+      "normal_range": [
+        1697.0,
+        1996.9
+      ],
+      "omnia_range": [
+        1617.5,
+        1969.1
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 54,
+        "omnia": 56
+      }
+    },
+    {
+      "format": "DICOM CT series",
+      "section": "radiology",
+      "normal_items_per_s": 1049.4,
+      "omnia_items_per_s": 921.3,
+      "speedup": 0.88,
+      "normal_range": [
+        1049.4,
+        1049.4
+      ],
+      "omnia_range": [
+        921.3,
+        921.3
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 95,
+        "omnia": 109
+      }
+    },
+    {
+      "format": "DICOM whole-slide",
+      "section": "radiology",
+      "normal_items_per_s": 1191.0,
+      "omnia_items_per_s": 563.9,
+      "speedup": 0.47,
+      "normal_range": [
+        1191.0,
+        1191.0
+      ],
+      "omnia_range": [
+        563.9,
+        563.9
+      ],
+      "epoch_of_100k_items_seconds": {
+        "normal": 84,
+        "omnia": 177
+      }
+    }
+  ],
+  "verdict": "Large win on full-resolution Aperio SVS (1.8x JPEG, 8.5x JPEG 2000), MIRAX (~3.8x), Leica SCN (~2.7x), NIfTI (~2x); small or no win on 20x Aperio JPEG 2000, NDPI, generic/Philips TIFF; no win (tie or slower) on DICOM."
+}

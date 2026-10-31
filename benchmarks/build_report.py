@@ -206,3 +206,81 @@ doc = {
 }
 (HERE / "results.json").write_text(json.dumps(doc, indent=2))
 print("wrote results.json")
+
+
+# ── headline: the normal file format vs .omnia, nothing else ─────────────
+# (normal, omnia) items/s, plus GPU share. Level-0 rows come from the codec study (full-resolution tiles).
+HEAD = [
+    # label, normal(run1,run2), omnia(run1,run2), section
+    ("Aperio SVS, full-res 40x (JPEG)",   (1348.3, 1348.3), (2489.0, 2489.0), "slides at full resolution"),
+    ("Aperio SVS, full-res (JPEG 2000)",  (292.3, 292.3),   (2490.7, 2490.7), "slides at full resolution"),
+    ("Aperio SVS 20x (JPEG)",   TRAIN["Aperio SVS (JPEG)"]["openslide"],      TRAIN["Aperio SVS (JPEG)"]["omnia_zstd"], "slides, 20x and below"),
+    ("Aperio SVS 20x (JPEG 2000)", TRAIN["Aperio SVS (JPEG 2000)"]["openslide"], TRAIN["Aperio SVS (JPEG 2000)"]["omnia_zstd"], "slides, 20x and below"),
+    ("Hamamatsu NDPI",          TRAIN["Hamamatsu NDPI"]["openslide"],         TRAIN["Hamamatsu NDPI"]["omnia_zstd"], "slides, 20x and below"),
+    ("Leica SCN",               TRAIN["Leica SCN"]["openslide"],              TRAIN["Leica SCN"]["omnia_zstd"], "slides, 20x and below"),
+    ("Generic TIFF",            TRAIN["Generic TIFF"]["openslide"],           TRAIN["Generic TIFF"]["omnia_zstd"], "slides, 20x and below"),
+    ("Philips TIFF",            TRAIN["Philips TIFF"]["openslide"],           TRAIN["Philips TIFF"]["omnia_zstd"], "slides, 20x and below"),
+    ("3DHISTECH MIRAX",         TRAIN["3DHISTECH MIRAX"]["openslide"],        TRAIN["3DHISTECH MIRAX"]["omnia_zstd"], "slides, 20x and below"),
+    ("NIfTI MRI (.nii.gz)",     (368.8, 1694.8),  (1951.4, 2096.4), "radiology"),
+    ("DICOM MR series",         (1996.9, 1697.0), (1969.1, 1617.5), "radiology"),
+    ("DICOM CT series",         (None, 1049.4),   (None, 921.3),    "radiology"),
+    ("DICOM whole-slide",       (None, 1191.0),   (None, 563.9),    "radiology"),
+]
+
+
+def _mean(v):
+    v = [x for x in v if x is not None]
+    return float(np.mean(v)), min(v), max(v)
+
+
+fig, ax = plt.subplots(figsize=(11.5, 7.2))
+rows = HEAD[::-1]
+y = np.arange(len(rows)) * 1.0
+h = .36
+for i, (label, nrm, omn, sec) in enumerate(rows):
+    n, nlo, nhi = _mean(nrm); o, olo, ohi = _mean(omn)
+    ax.barh(y[i] + h / 2, n, h, color=C_NATIVE)
+    ax.barh(y[i] - h / 2, o, h, color=C_ZSTD)
+    if nlo != nhi:
+        ax.errorbar(n, y[i] + h / 2, xerr=[[n - nlo], [nhi - n]], fmt="none", ecolor="#222", capsize=2, lw=.9)
+    if olo != ohi:
+        ax.errorbar(o, y[i] - h / 2, xerr=[[o - olo], [ohi - o]], fmt="none", ecolor="#222", capsize=2, lw=.9)
+    r = o / n
+    verdict = f"{r:.1f}x faster" if r >= 1.15 else (f"{1 / r:.1f}x slower" if r <= .87 else "tie")
+    col = C_ZSTD if r >= 1.15 else (C_BAD if r <= .87 else "#555")
+    ax.text(max(n, o, nhi, ohi) + 120, y[i], verdict, va="center", fontsize=10.5, fontweight="bold", color=col)
+    ax.text(12, y[i] + h / 2, f"{n:,.0f}", va="center", ha="left", fontsize=8.5, color="white", fontweight="bold")
+    ax.text(12, y[i] - h / 2, f"{o:,.0f}", va="center", ha="left", fontsize=8.5, color="white", fontweight="bold")
+ax.set_yticks(y, [r[0] for r in rows], fontsize=9.5)
+ax.set_xlim(0, 4300); ax.set_xlabel("training throughput  (tiles or slices / second) — higher is better")
+ax.set_title("Training with the normal file vs training with .omnia", loc="left", fontweight="bold", fontsize=13)
+from matplotlib.patches import Patch
+ax.legend(handles=[Patch(color=C_NATIVE, label="normal file (.svs / .ndpi / .tiff / .nii.gz / .dcm), native reader"),
+                   Patch(color=C_ZSTD, label=".omnia (lossless)")], frameon=False, loc="lower right")
+# section dividers
+sec_prev = None
+for i, (label, nrm, omn, sec) in enumerate(rows):
+    if sec != sec_prev and i > 0:
+        ax.axhline(y[i] - .5 + 1 - 1, color="#ccc", lw=.8)
+    sec_prev = sec
+fig.text(0.01, -0.035, "NVIDIA A40, ResNet-18 + AMP, shuffled DataLoader, 4 data workers, 9 vCPU. Bars = mean of the runs; whiskers = run-to-run range.\n"
+         "Full-resolution rows: one run each, tiles from level 0. Radiology: DICOM whole-slide is 57 tiles only. 'tie' = within about 15%.",
+         fontsize=7.8, color="#555")
+save(fig, "00_headline_normal_vs_omnia")
+
+head = []
+for label, nrm, omn, sec in HEAD:
+    n, nlo, nhi = _mean(nrm); o, olo, ohi = _mean(omn)
+    head.append({"format": label, "section": sec,
+                 "normal_items_per_s": round(n, 1), "omnia_items_per_s": round(o, 1),
+                 "speedup": round(o / n, 2),
+                 "normal_range": [round(nlo, 1), round(nhi, 1)], "omnia_range": [round(olo, 1), round(ohi, 1)],
+                 "epoch_of_100k_items_seconds": {"normal": round(1e5 / n), "omnia": round(1e5 / o)}})
+(HERE / "headline.json").write_text(json.dumps({
+    "claim": ".omnia vs the file you would normally train from, same machine, same loop",
+    "setup": "NVIDIA A40 (9 vCPU), ResNet-18 + AMP, batch 64, shuffled DataLoader, 4 workers; .omnia = lossless default",
+    "rows": head,
+    "verdict": "Large win on full-resolution Aperio SVS (1.8x JPEG, 8.5x JPEG 2000), MIRAX (~3.8x), Leica SCN (~2.7x), NIfTI (~2x); "
+               "small or no win on 20x Aperio JPEG 2000, NDPI, generic/Philips TIFF; no win (tie or slower) on DICOM.",
+}, indent=2))
+print("wrote headline.json")
