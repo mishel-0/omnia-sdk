@@ -13,11 +13,11 @@ It is **not** faster everywhere (NDPI and DICOM CT/MR are ties) and the speed-up
 ## Install
 
 ```bash
-pip install "omnia-sdk[all]"        # slides, DICOM, NIfTI
-pip install omnia-sdk               # core only (no format readers)
+pip install "omnia-sdk[all] @ git+https://github.com/mishel-0/omnia-sdk.git"   # slides, DICOM, NIfTI
+pip install "git+https://github.com/mishel-0/omnia-sdk.git"                    # core only (no format readers)
 ```
 
-Python 3.11+. Extras: `[svs]` (OpenSlide slides), `[dicom]`, `[dicom-wsi]`, `[nifti]`.
+Python 3.11+ (not on PyPI yet). Extras: `[svs]` (OpenSlide slides), `[dicom]`, `[dicom-wsi]`, `[nifti]`.
 
 ## Use
 
