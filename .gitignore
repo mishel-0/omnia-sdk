@@ -20,3 +20,6 @@ benchmarks/output/
 .DS_Store
 .idea/
 .vscode/
+
+# Drafts for social posts
+launch/
