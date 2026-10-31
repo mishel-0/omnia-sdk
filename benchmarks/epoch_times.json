@@ -1,0 +1,96 @@
+{
+  "gpu": "NVIDIA A40 (48 GB), RunPod, 9 vCPU",
+  "training": "ResNet-18, mixed precision (AMP), batch 64, 4 DataLoader workers, shuffled tiles",
+  "original_file_reader": "OpenSlide read_region, decoding on every read",
+  "omnia": "lossless .omnia (zstd level 5, one tile per block)",
+  "tiles_per_epoch": 100000,
+  "method": "epoch time = tiles per epoch / measured training throughput (tiles/s). Throughput measured over 2 timed epochs after a warm-up epoch; mean of two runs where two exist.",
+  "samples": "public OpenSlide test slides: JP2K-33003-1.svs, CMU-1.svs, CMU-1.mrxs, Leica-1.scn",
+  "not_faster_on": [
+    "Hamamatsu NDPI (tie)",
+    "DICOM CT and MR series (tie)",
+    "DICOM whole-slide (slower on a 57-tile sample)"
+  ],
+  "results": [
+    {
+      "format": "Aperio SVS, JPEG 2000, level 0",
+      "throughput_tiles_per_s": {
+        "original_file": 292,
+        "omnia": 2491
+      },
+      "speedup": 8.53,
+      "epoch_time_seconds": {
+        "original_file": 342.5,
+        "omnia": 40.1
+      },
+      "time_for_20_epochs_minutes": {
+        "original_file": 114.2,
+        "omnia": 13.4
+      }
+    },
+    {
+      "format": "Aperio SVS, JPEG, level 1",
+      "throughput_tiles_per_s": {
+        "original_file": 455,
+        "omnia": 1874
+      },
+      "speedup": 4.12,
+      "epoch_time_seconds": {
+        "original_file": 219.8,
+        "omnia": 53.4
+      },
+      "time_for_20_epochs_minutes": {
+        "original_file": 73.3,
+        "omnia": 17.8
+      }
+    },
+    {
+      "format": "3DHISTECH MIRAX",
+      "throughput_tiles_per_s": {
+        "original_file": 555,
+        "omnia": 2116
+      },
+      "speedup": 3.81,
+      "epoch_time_seconds": {
+        "original_file": 180.2,
+        "omnia": 47.3
+      },
+      "time_for_20_epochs_minutes": {
+        "original_file": 60.1,
+        "omnia": 15.8
+      }
+    },
+    {
+      "format": "Leica SCN",
+      "throughput_tiles_per_s": {
+        "original_file": 810,
+        "omnia": 2225
+      },
+      "speedup": 2.75,
+      "epoch_time_seconds": {
+        "original_file": 123.5,
+        "omnia": 44.9
+      },
+      "time_for_20_epochs_minutes": {
+        "original_file": 41.2,
+        "omnia": 15.0
+      }
+    },
+    {
+      "format": "Aperio SVS, JPEG, level 0",
+      "throughput_tiles_per_s": {
+        "original_file": 1348,
+        "omnia": 2489
+      },
+      "speedup": 1.85,
+      "epoch_time_seconds": {
+        "original_file": 74.2,
+        "omnia": 40.2
+      },
+      "time_for_20_epochs_minutes": {
+        "original_file": 24.7,
+        "omnia": 13.4
+      }
+    }
+  ]
+}
