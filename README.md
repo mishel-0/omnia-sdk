@@ -44,16 +44,51 @@ codec, a checksum on every block. Convert once, train many times.
 
 ## Quick start
 
-```bash
-pip install "omnia-sdk[all] @ git+https://github.com/mishel-0/omnia-sdk.git"
-```
+### 1. Install (one line, no admin rights)
+
+**macOS / Linux**
 
 ```bash
-omnia convert slide.svs          # whole-slide image -> slide.omnia
-omnia convert ct_series/         # folder of DICOM   -> ct_series.omnia
-omnia convert brain.nii.gz       # NIfTI volume      -> brain.omnia
+curl -fsSL https://raw.githubusercontent.com/mishel-0/omnia-sdk/main/install.sh | sh
+```
+
+**Windows** (PowerShell)
+
+```powershell
+irm https://raw.githubusercontent.com/mishel-0/omnia-sdk/main/install.ps1 | iex
+```
+
+The installer needs Python 3.11 or newer ([python.org](https://www.python.org/downloads/)). It creates a private
+environment in `~/.omnia`, installs every format reader (OpenSlide, pydicom, wsidicom, nibabel) and adds the `omnia`
+command to your PATH. It does not install PyTorch unless you ask (`OMNIA_WITH_TORCH=1`), so the download stays small.
+Run it again to update.
+
+Prefer pip?
+
+```bash
+pip install "omnia-sdk[all] @ https://github.com/mishel-0/omnia-sdk/archive/refs/heads/main.zip"
+#   add ,train      for the PyTorch dataset
+#   add ,benchmark  for `omnia benchmark` and `omnia recommend`
+```
+
+### 2. Check your machine
+
+```bash
+omnia doctor          # which formats this machine can convert
+omnia doctor --fix    # install any missing readers
+```
+
+### 3. Convert
+
+```bash
+omnia convert slide.svs          # whole-slide image   -> slide.omnia
+omnia convert slides/ out/       # a folder of slides  -> out/*.omnia
+omnia convert ct_series/         # folder of DICOM     -> ct_series.omnia
+omnia convert brain.nii.gz       # NIfTI volume        -> brain.omnia
 omnia verify  slide.omnia        # check every block's CRC
 ```
+
+### 4. Train
 
 ```python
 import omnia_sdk
@@ -130,13 +165,15 @@ omnia benchmark formats slide.svs scan.nii.gz ct_series/
 | DICOM whole-slide (VL WSI) | folder | wsidicom | identical tiles |
 | NIfTI | `.nii`, `.nii.gz` | nibabel | bit-exact |
 
-Install only what you need: `[svs]`, `[dicom]`, `[dicom-wsi]`, `[nifti]`, or `[all]`.
+The installer includes every reader. With pip, install only what you need: `[svs]`, `[dicom]`, `[dicom-wsi]`, `[nifti]`, or `[all]`.
+The OpenSlide C library comes as a wheel (`openslide-bin`), so there is no Homebrew or DLL setup on macOS or Windows.
 
 ## Command line
 
 | Command | What it does |
 |---|---|
-| `omnia convert <file or folder> [out.omnia]` | Detects the format and converts. `--codec jpeg --quality 90` for slides, `--min-level N` to drop the highest-resolution levels. |
+| `omnia doctor [--fix]` | Shows which format readers are installed; `--fix` installs the missing ones. |
+| `omnia convert <file or folder> [out]` | Detects the format and converts; a folder of slides converts each one. `--codec jpeg --quality 90` for slides, `--min-level N` to drop the highest-resolution levels. |
 | `omnia verify <file.omnia>` | Checks the CRC of every block. |
 | `omnia info <file.omnia>` | Levels, tile size, codec, size, source. |
 | `omnia recommend <slide>` | One-minute check on your slide: size, read speed and fidelity per codec, and a recommendation. No GPU needed. |
@@ -177,7 +214,7 @@ Bug reports, new format readers and benchmark results from other hardware are al
 
 ```bash
 git clone https://github.com/mishel-0/omnia-sdk.git && cd omnia-sdk
-pip install -e ".[all,dev]"
+pip install -e ".[all,train,benchmark,dev]"
 pytest
 ```
 

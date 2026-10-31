@@ -24,19 +24,27 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
 requires-python = ">=3.11"
+# The core (convert, verify, info, OmniaContainer) needs no PyTorch, so converting
+# files on a laptop stays a small install. Training and benchmarks pull torch in
+# through the [train] / [benchmark] extras.
 dependencies = [
     "numpy>=1.24.0",
-    "torch>=2.0.0",
     "zstandard>=0.21.0",
     "tifffile>=2024.0.0",
 ]
 
 [project.optional-dependencies]
-svs = ["openslide-python>=1.4.0", "Pillow>=10.0.0"]  # needed for .svs conversion + benchmark
-dicom = ["pydicom>=2.4.0"]
-dicom-wsi = ["pydicom>=2.4.0", "wsidicom>=0.20.0"]
+# openslide-bin ships the OpenSlide C library as a wheel (macOS, Windows, Linux): no Homebrew or DLL setup.
+svs = ["openslide-python>=1.4.0", "openslide-bin>=4.0.0", "Pillow>=10.0.0"]
+# pylibjpeg decoders handle JPEG / JPEG 2000 compressed DICOM.
+dicom = ["pydicom>=2.4.0", "pylibjpeg>=2.0", "pylibjpeg-libjpeg>=2.1", "pylibjpeg-openjpeg>=2.3"]
+dicom-wsi = ["pydicom>=2.4.0", "wsidicom>=0.20.0", "pylibjpeg>=2.0", "pylibjpeg-libjpeg>=2.1", "pylibjpeg-openjpeg>=2.3"]
 nifti = ["nibabel>=5.0.0"]
-all = ["openslide-python>=1.4.0", "Pillow>=10.0.0", "pydicom>=2.4.0", "wsidicom>=0.20.0", "nibabel>=5.0.0"]
+# Every format reader. Still no PyTorch: add [train] to load .omnia files into a model.
+all = ["openslide-python>=1.4.0", "openslide-bin>=4.0.0", "Pillow>=10.0.0", "pydicom>=2.4.0", "wsidicom>=0.20.0",
+       "pylibjpeg>=2.0", "pylibjpeg-libjpeg>=2.1", "pylibjpeg-openjpeg>=2.3", "nibabel>=5.0.0"]
+train = ["torch>=2.0.0"]
+benchmark = ["torch>=2.0.0", "torchvision>=0.15.0"]
 dev = ["pytest>=7.0.0"]
 
 [project.scripts]

@@ -47,3 +47,17 @@ def test_recommendation_avoids_slow_batched_blocks_and_picks_fidelity_among_comp
     rec = recommend(ROWS)
     assert rec["lossless"] == "zstd_L1_b1"      # the b16 variant is 12x slower to read shuffled
     assert rec["compact"] == "jpeg_q95"         # highest fidelity that is still >= 5x smaller
+
+
+def test_convert_a_folder_of_slides(tmp_path, monkeypatch):
+    pytest.importorskip("openslide")
+    tifffile = pytest.importorskip("tifffile")
+    src = tmp_path / "slides"
+    src.mkdir()
+    rng = np.random.default_rng(0)
+    for name in ("a", "b"):
+        tifffile.imwrite(str(src / f"{name}.tif"), rng.integers(0, 256, (512, 512, 3), dtype=np.uint8),
+                         tile=(256, 256), photometric="rgb")
+    out = tmp_path / "out"
+    assert _run(monkeypatch, "convert", str(src), str(out), "--min-level", "0") == 0
+    assert sorted(p.name for p in out.glob("*.omnia")) == ["a.omnia", "b.omnia"]

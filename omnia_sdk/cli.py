@@ -170,6 +170,9 @@ def main():
     rec_p.add_argument("--tiles", type=int, default=2000,
                        help="Tiles to sample (default 2000; fewer than ~1000 hides the cost of batched blocks)")
 
+    doc_p = subparsers.add_parser("doctor", help="Check which formats this machine can convert (--fix installs missing readers)")
+    doc_p.add_argument("--fix", action="store_true", help="pip-install missing format readers into this environment")
+
     verify_p = subparsers.add_parser("verify", help="Verify .omnia integrity")
     verify_p.add_argument("omnia_file", help=".omnia file")
 
@@ -186,8 +189,30 @@ def main():
                                   codec=args.codec,
                                   quality=args.quality,
                                   min_level=args.min_level) else 1)
+    elif args.command == "doctor":
+        from .doctor import main as doctor_main
+        sys.exit(doctor_main(fix=args.fix))
     elif args.command == "convert":
-        from .converters import convert_file, detect_format, UnsupportedFormat
+        from .converters import convert_file, detect_format, UnsupportedFormat, WSI_SUFFIXES
+        src = Path(args.input)
+        slides = sorted(p for p in src.iterdir() if p.suffix.lower() in WSI_SUFFIXES) if src.is_dir() else []
+        if slides:  # a folder of slides: convert each one
+            out_dir = Path(args.omnia_file) if args.omnia_file else src
+            out_dir.mkdir(parents=True, exist_ok=True)
+            failed = 0
+            for k, p in enumerate(slides, 1):
+                try:
+                    kw = {"batch_size": args.batch_size, "zstd_level": args.zstd_level,
+                          "min_level": 1 if args.min_level is None else args.min_level}
+                    if args.codec:
+                        kw.update(codec=args.codec, quality=args.quality)
+                    st = convert_file(p, out_dir / f"{p.stem}.omnia", fmt="whole-slide", **kw)
+                    logging.info("[%d/%d] %s -> %s (%.1f MB)", k, len(slides), p.name, f"{p.stem}.omnia",
+                                 st["compressed_bytes"] / 1e6)
+                except Exception as e:
+                    failed += 1
+                    logging.error("[%d/%d] %s: %s", k, len(slides), p.name, e)
+            sys.exit(1 if failed else 0)
         try:
             fmt = detect_format(args.input)
             kw = {"batch_size": args.batch_size, "zstd_level": args.zstd_level}
@@ -197,7 +222,10 @@ def main():
                 kw["codec"] = args.codec
                 kw["quality"] = args.quality
             stats = convert_file(args.input, args.omnia_file, fmt=fmt, **kw)
-        except (UnsupportedFormat, FileNotFoundError, ImportError) as e:
+        except ImportError as e:
+            logging.error("%s\nOr install every reader at once: omnia doctor --fix", e)
+            sys.exit(1)
+        except (UnsupportedFormat, FileNotFoundError) as e:
             logging.error("%s", e)
             sys.exit(1)
         logging.info("Converted %s (%s): %.1f MB -> %.1f MB (%.2fx vs source)",
@@ -205,6 +233,12 @@ def main():
                      stats["compressed_bytes"] / 1e6, stats["ratio_vs_source"] if "ratio_vs_source" in stats else stats.get("ratio_vs_svs", 0))
         sys.exit(0)
     elif args.command == "benchmark":
+        try:
+            import torch  # noqa: F401
+        except ImportError:
+            logging.error("Benchmarks run a real training loop and need PyTorch: "
+                          "pip install \"omnia-sdk[benchmark,all] @ https://github.com/mishel-0/omnia-sdk/archive/refs/heads/main.zip\"")
+            sys.exit(1)
         if args.bench_kind == "codecs":
             from .codec_bench import main as run
         else:
@@ -212,12 +246,17 @@ def main():
         run(args.rest)
         sys.exit(0)
     elif args.command == "recommend":
+        try:
+            import torch  # noqa: F401
+        except ImportError:
+            logging.error("`omnia recommend` scores codecs with a small ResNet and needs PyTorch: "
+                          "pip install \"omnia-sdk[benchmark,all] @ https://github.com/mishel-0/omnia-sdk/archive/refs/heads/main.zip\"")
+            sys.exit(1)
         from .codec_bench import main as run
         run([*args.slides, "--quick", "--tiles", str(args.tiles)])
         sys.exit(0)
     elif args.command == "svs-native":
         from .native_convert import svs_to_omnia_native
-        from pathlib import Path
         sp = Path(args.svs_file)
         if not sp.exists():
             logging.error("File not found: %s", sp)
