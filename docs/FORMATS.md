@@ -50,7 +50,7 @@ Lossless is often **larger** than the source for already-compressed slides.
 | DICOM MR | 192 slices | pydicom: 1,697 | 1,618 | 40 -> 10.9 MB | yes |
 | DICOM whole-slide | GTEx, 5 instances, 57 tiles | wsidicom: 1,191 | **564** | 40 -> 8.4 MB | tiles identical |
 
-- Single-thread random read (run 1 and 2 agree): pydicom ~700-970 slices/s vs `.omnia` 12,600-32,500/s (**13-35x**), nibabel gzip slice 15/s vs `.omnia` 19,000-21,700/s.
+- Single-thread random read (run 1 and 2 agree): pydicom ~700-970 slices/s vs `.omnia` 12,600-32,500/s (**17-35x**), nibabel gzip slice 15/s vs `.omnia` 19,000-21,700/s.
 - **In training, `.omnia` did not beat pydicom** for CT or MR (within noise), and **was about half the speed of wsidicom**
   on the one DICOM whole-slide sample. That sample is tiny (57 tiles, 3 batches), so treat it as "not shown to help".
 - The NIfTI gap depends on run: 369/s vs 1,695/s for the gzip slice reader. Against reading the whole volume into RAM it is a tie.

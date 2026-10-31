@@ -1,0 +1,756 @@
+{
+  "title": "omnia-sdk benchmarks: .omnia container vs each format's usual reader",
+  "date": "2026-10-30",
+  "hardware": {
+    "gpu": "NVIDIA A40 (RunPod secure cloud)",
+    "vcpu_allotted": 9,
+    "runs": 2,
+    "note": "the two runs landed on different physical hosts; same GPU model"
+  },
+  "workload": {
+    "model": "ResNet-18, AMP, channels_last",
+    "batch": 64,
+    "data_workers": 4,
+    "loader": "shuffled torch DataLoader, tiles/slices read on demand",
+    "metric": "items per second through the training loop (after one warm-up epoch)",
+    "slides": "256 px tiles (Philips: larger) from the second pyramid level, tissue tiles only",
+    "omnia_defaults": "zstd level 5, one tile per block; JPEG quality 90"
+  },
+  "slides_training_items_per_s": {
+    "Aperio SVS (JPEG)": {
+      "openslide": {
+        "run1": 435.9,
+        "run2": 474.3
+      },
+      "omnia_zstd": {
+        "run1": 1616.4,
+        "run2": 2130.7
+      },
+      "omnia_jpeg90": {
+        "run1": 2059.4,
+        "run2": 1986.7
+      }
+    },
+    "Aperio SVS (JPEG 2000)": {
+      "openslide": {
+        "run1": 2020.3,
+        "run2": 1025.9
+      },
+      "omnia_zstd": {
+        "run1": 2106.1,
+        "run2": 1507.9
+      },
+      "omnia_jpeg90": {
+        "run1": 2275.4,
+        "run2": 1304.5
+      }
+    },
+    "Hamamatsu NDPI": {
+      "openslide": {
+        "run1": 2484.8,
+        "run2": 3438.4
+      },
+      "omnia_zstd": {
+        "run1": 2482.7,
+        "run2": 3168.1
+      },
+      "omnia_jpeg90": {
+        "run1": 2264.0,
+        "run2": 2490.2
+      }
+    },
+    "Leica SCN": {
+      "openslide": {
+        "run1": 821.6,
+        "run2": 797.7
+      },
+      "omnia_zstd": {
+        "run1": 2166.3,
+        "run2": 2283.2
+      },
+      "omnia_jpeg90": {
+        "run1": 2061.2,
+        "run2": 2019.7
+      }
+    },
+    "Generic TIFF": {
+      "openslide": {
+        "run1": 1535.0,
+        "run2": 1715.6
+      },
+      "omnia_zstd": {
+        "run1": 2041.2,
+        "run2": 2344.2
+      },
+      "omnia_jpeg90": {
+        "run1": 2095.7,
+        "run2": 2174.6
+      }
+    },
+    "Philips TIFF": {
+      "openslide": {
+        "run1": 480.7,
+        "run2": 469.6
+      },
+      "omnia_zstd": {
+        "run1": 612.7,
+        "run2": 620.5
+      },
+      "omnia_jpeg90": {
+        "run1": null,
+        "run2": 621.6
+      }
+    },
+    "3DHISTECH MIRAX": {
+      "openslide": {
+        "run1": 544.5,
+        "run2": 566.2
+      },
+      "omnia_zstd": {
+        "run1": 1940.8,
+        "run2": 2291.1
+      },
+      "omnia_jpeg90": {
+        "run1": 1926.3,
+        "run2": 2075.5
+      }
+    }
+  },
+  "single_thread_read_items_per_s": {
+    "Aperio SVS (JPEG)": {
+      "native": {
+        "run1": 137.9,
+        "run2": 134.2
+      },
+      "omnia_zstd": {
+        "run1": 3363.6,
+        "run2": 3680.3
+      }
+    },
+    "Aperio SVS (JPEG 2000)": {
+      "native": {
+        "run1": 91.8,
+        "run2": 107.8
+      },
+      "omnia_zstd": {
+        "run1": 2287.9,
+        "run2": 2387.0
+      }
+    },
+    "Hamamatsu NDPI": {
+      "native": {
+        "run1": 6553.0,
+        "run2": 7476.8
+      },
+      "omnia_zstd": {
+        "run1": 29524.3,
+        "run2": 40072.5
+      }
+    },
+    "Leica SCN": {
+      "native": {
+        "run1": 202.7,
+        "run2": 205.8
+      },
+      "omnia_zstd": {
+        "run1": 3086.1,
+        "run2": 3541.8
+      }
+    },
+    "Generic TIFF": {
+      "native": {
+        "run1": 517.2,
+        "run2": 498.0
+      },
+      "omnia_zstd": {
+        "run1": 3113.5,
+        "run2": 3495.6
+      }
+    },
+    "Philips TIFF": {
+      "native": {
+        "run1": 141.6,
+        "run2": 137.3
+      },
+      "omnia_zstd": {
+        "run1": 912.0,
+        "run2": 1083.2
+      }
+    },
+    "3DHISTECH MIRAX": {
+      "native": {
+        "run1": 117.4,
+        "run2": 144.4
+      },
+      "omnia_zstd": {
+        "run1": 3398.0,
+        "run2": 3955.2
+      }
+    },
+    "NIfTI (gzip slice)": {
+      "native": {
+        "run1": 15.3,
+        "run2": 15.8
+      },
+      "omnia_zstd": {
+        "run1": 19005.8,
+        "run2": 21656.5
+      }
+    },
+    "DICOM CT": {
+      "native": {
+        "run1": 722.7,
+        "run2": 965.6
+      },
+      "omnia_zstd": {
+        "run1": 12642.4,
+        "run2": 20202.5
+      }
+    },
+    "DICOM MR": {
+      "native": {
+        "run1": 701.7,
+        "run2": 940.6
+      },
+      "omnia_zstd": {
+        "run1": 22730.4,
+        "run2": 32548.9
+      }
+    },
+    "DICOM whole-slide": {
+      "native": {
+        "run1": null,
+        "run2": 3180.9
+      },
+      "omnia_zstd": {
+        "run1": null,
+        "run2": 3248.3
+      }
+    }
+  },
+  "size_mb": {
+    "Aperio SVS (JPEG)": {
+      "source": 177.55,
+      "omnia_zstd_l5": 60.25,
+      "omnia_jpeg_q90": 12.43
+    },
+    "Aperio SVS (JPEG 2000)": {
+      "source": 63.85,
+      "omnia_zstd_l5": 27.11,
+      "omnia_jpeg_q90": 4.95
+    },
+    "Hamamatsu NDPI": {
+      "source": 198.03,
+      "omnia_zstd_l5": 518.51,
+      "omnia_jpeg_q90": 282.43
+    },
+    "Leica SCN": {
+      "source": 291.81,
+      "omnia_zstd_l5": 143.31,
+      "omnia_jpeg_q90": 44.61
+    },
+    "Generic TIFF": {
+      "source": 204.12,
+      "omnia_zstd_l5": 352.98,
+      "omnia_jpeg_q90": 72.67
+    },
+    "Philips TIFF": {
+      "source": 326.61,
+      "omnia_zstd_l5": 623.5,
+      "omnia_jpeg_q90": 114.13
+    },
+    "3DHISTECH MIRAX": {
+      "source": 565.1,
+      "omnia_zstd_l5": 1214.48,
+      "omnia_jpeg_q90": 340.33
+    },
+    "NIfTI MRI": {
+      "source": 8.68,
+      "omnia_zstd_l5": 7.7,
+      "omnia_jpeg_q90": null
+    },
+    "DICOM CT": {
+      "source": 60.0,
+      "omnia_zstd_l5": 22.52,
+      "omnia_jpeg_q90": null
+    },
+    "DICOM MR": {
+      "source": 40.01,
+      "omnia_zstd_l5": 10.93,
+      "omnia_jpeg_q90": null
+    },
+    "DICOM whole-slide": {
+      "source": 40.02,
+      "omnia_zstd_l5": 8.42,
+      "omnia_jpeg_q90": null
+    }
+  },
+  "radiology_training_items_per_s_run2": {
+    "NIfTI MRI": {
+      "native (gzip slice)": 1694.8,
+      "native (volume in RAM)": 2157.5,
+      "omnia_zstd": 2096.4
+    },
+    "DICOM CT": {
+      "native (pydicom)": 1049.4,
+      "omnia_zstd": 921.3
+    },
+    "DICOM MR": {
+      "native (pydicom)": 1697.0,
+      "omnia_zstd": 1617.5
+    },
+    "DICOM whole-slide": {
+      "native (wsidicom)": 1191.0,
+      "omnia_zstd": 563.9
+    }
+  },
+  "codec_study_cmu1": [
+    {
+      "variant": "raw",
+      "size_mb": 589.8,
+      "gpu_share": 0.97
+    },
+    {
+      "variant": "zstd L1 / 1 tile",
+      "size_mb": 542.6,
+      "gpu_share": 0.975
+    },
+    {
+      "variant": "zstd L3 / 1 tile",
+      "size_mb": 541.8,
+      "gpu_share": 0.972
+    },
+    {
+      "variant": "zstd L3 / 16 tiles",
+      "size_mb": 541.6,
+      "gpu_share": 0.332
+    },
+    {
+      "variant": "zstd L9 / 16 tiles",
+      "size_mb": 543.1,
+      "gpu_share": 0.33
+    },
+    {
+      "variant": "JPEG q75",
+      "size_mb": 48.2,
+      "gpu_share": 0.971
+    },
+    {
+      "variant": "JPEG q90",
+      "size_mb": 75.6,
+      "gpu_share": 0.963
+    },
+    {
+      "variant": "JPEG q95",
+      "size_mb": 104.4,
+      "gpu_share": 0.964
+    },
+    {
+      "variant": "openslide",
+      "size_mb": 177.6,
+      "gpu_share": 0.527
+    }
+  ],
+  "zstd_level_size_mb": [
+    {
+      "sample": "CMU-1.svs",
+      "format": "whole-slide",
+      "source_mb": 177.55,
+      "variants": {
+        "zstd_L5": 60.25,
+        "jpeg_q90": 12.43,
+        "zstd_L1": 61.55,
+        "zstd_L3": 61.53,
+        "zstd_L9": 59.92
+      },
+      "readers": {
+        "openslide": [
+          474.3,
+          0.215
+        ],
+        "zstd_L5": [
+          2130.7,
+          0.966
+        ],
+        "jpeg_q90": [
+          1986.7,
+          0.9
+        ],
+        "zstd_L1": [
+          2198.5,
+          0.996
+        ],
+        "zstd_L3": [
+          2169.6,
+          0.983
+        ],
+        "zstd_L9": [
+          2039.1,
+          0.924
+        ]
+      }
+    },
+    {
+      "sample": "JP2K-33003-1.svs",
+      "format": "whole-slide",
+      "source_mb": 63.85,
+      "variants": {
+        "zstd_L5": 27.11,
+        "jpeg_q90": 4.95,
+        "zstd_L1": 28.62,
+        "zstd_L3": 28.42,
+        "zstd_L9": 26.99
+      },
+      "readers": {
+        "openslide": [
+          1025.9,
+          0.432
+        ],
+        "zstd_L5": [
+          1507.9,
+          0.635
+        ],
+        "jpeg_q90": [
+          1304.5,
+          0.549
+        ],
+        "zstd_L1": [
+          1266.1,
+          0.533
+        ],
+        "zstd_L3": [
+          1423.6,
+          0.599
+        ],
+        "zstd_L9": [
+          1235.9,
+          0.52
+        ]
+      }
+    },
+    {
+      "sample": "CMU-1.ndpi",
+      "format": "whole-slide",
+      "source_mb": 198.03,
+      "variants": {
+        "zstd_L5": 518.51,
+        "jpeg_q90": 282.43,
+        "zstd_L1": 579.84,
+        "zstd_L3": 546.43,
+        "zstd_L9": 491.37
+      },
+      "readers": {
+        "openslide": [
+          3438.4,
+          1.0
+        ],
+        "zstd_L5": [
+          3168.1,
+          1.0
+        ],
+        "jpeg_q90": [
+          2490.2,
+          1.0
+        ],
+        "zstd_L1": [
+          3311.0,
+          1.0
+        ],
+        "zstd_L3": [
+          2680.7,
+          1.0
+        ],
+        "zstd_L9": [
+          2505.2,
+          1.0
+        ]
+      }
+    },
+    {
+      "sample": "Leica-1.scn",
+      "format": "whole-slide",
+      "source_mb": 291.81,
+      "variants": {
+        "zstd_L5": 143.31,
+        "jpeg_q90": 44.61,
+        "zstd_L1": 151.7,
+        "zstd_L3": 148.72,
+        "zstd_L9": 142.73
+      },
+      "readers": {
+        "openslide": [
+          797.7,
+          0.35
+        ],
+        "zstd_L5": [
+          2283.2,
+          1.0
+        ],
+        "jpeg_q90": [
+          2019.7,
+          0.886
+        ],
+        "zstd_L1": [
+          2356.1,
+          1.0
+        ],
+        "zstd_L3": [
+          2205.0,
+          0.967
+        ],
+        "zstd_L9": [
+          2262.1,
+          0.992
+        ]
+      }
+    },
+    {
+      "sample": "generic-CMU-1.tiff",
+      "format": "whole-slide",
+      "source_mb": 204.12,
+      "variants": {
+        "zstd_L5": 352.98,
+        "jpeg_q90": 72.67,
+        "zstd_L1": 378.59,
+        "zstd_L3": 372.08,
+        "zstd_L9": 348.53
+      },
+      "readers": {
+        "openslide": [
+          1715.6,
+          0.797
+        ],
+        "zstd_L5": [
+          2344.2,
+          1.0
+        ],
+        "jpeg_q90": [
+          2174.6,
+          1.0
+        ],
+        "zstd_L1": [
+          2345.8,
+          1.0
+        ],
+        "zstd_L3": [
+          2094.5,
+          0.973
+        ],
+        "zstd_L9": [
+          2073.3,
+          0.963
+        ]
+      }
+    },
+    {
+      "sample": "Philips-1.tiff",
+      "format": "whole-slide",
+      "source_mb": 326.61,
+      "variants": {
+        "zstd_L5": 623.5,
+        "jpeg_q90": 114.13
+      },
+      "readers": {
+        "openslide": [
+          469.6,
+          0.734
+        ],
+        "zstd_L5": [
+          620.5,
+          0.97
+        ],
+        "jpeg_q90": [
+          621.6,
+          0.972
+        ]
+      },
+      "note": "GPU ceiling 639 items/s (large tiles) so every .omnia variant is at the ceiling"
+    },
+    {
+      "sample": "CMU-1.mrxs",
+      "format": "whole-slide",
+      "source_mb": 565.1,
+      "variants": {
+        "zstd_L5": 1214.48,
+        "jpeg_q90": 340.33
+      },
+      "readers": {
+        "openslide": [
+          566.2,
+          0.254
+        ],
+        "zstd_L5": [
+          2291.1,
+          1.0
+        ],
+        "jpeg_q90": [
+          2075.5,
+          0.93
+        ]
+      }
+    },
+    {
+      "sample": "mri-t1w.nii.gz",
+      "format": "nifti",
+      "source_mb": 8.68,
+      "variants": {
+        "zstd_L5": 7.7,
+        "zstd_L1": 8.61,
+        "zstd_L3": 8.24,
+        "zstd_L9": 7.64
+      },
+      "readers": {
+        "nibabel_gz_slice": [
+          1694.8,
+          0.704
+        ],
+        "nibabel_ram": [
+          2157.5,
+          0.896
+        ],
+        "zstd_L5": [
+          2096.4,
+          0.87
+        ],
+        "zstd_L1": [
+          2444.3,
+          1.0
+        ],
+        "zstd_L3": [
+          2093.0,
+          0.869
+        ],
+        "zstd_L9": [
+          1983.1,
+          0.823
+        ]
+      },
+      "bit_exact": true
+    },
+    {
+      "sample": "IDC nlst CT 114 slices",
+      "format": "dicom-series",
+      "source_mb": 60.0,
+      "variants": {
+        "zstd_L5": 22.52,
+        "zstd_L1": 26.7,
+        "zstd_L3": 23.53,
+        "zstd_L9": 21.98
+      },
+      "readers": {
+        "pydicom": [
+          1049.4,
+          0.491
+        ],
+        "zstd_L5": [
+          921.3,
+          0.431
+        ],
+        "zstd_L1": [
+          1418.6,
+          0.664
+        ],
+        "zstd_L3": [
+          918.1,
+          0.429
+        ],
+        "zstd_L9": [
+          966.9,
+          0.452
+        ]
+      },
+      "bit_exact": true
+    },
+    {
+      "sample": "IDC ea1141 MR 192 slices",
+      "format": "dicom-series",
+      "source_mb": 40.01,
+      "variants": {
+        "zstd_L5": 10.93,
+        "zstd_L1": 11.94,
+        "zstd_L3": 11.63,
+        "zstd_L9": 10.73
+      },
+      "readers": {
+        "pydicom": [
+          1697.0,
+          0.758
+        ],
+        "zstd_L5": [
+          1617.5,
+          0.722
+        ],
+        "zstd_L1": [
+          1432.6,
+          0.64
+        ],
+        "zstd_L3": [
+          1647.3,
+          0.735
+        ],
+        "zstd_L9": [
+          1644.6,
+          0.734
+        ]
+      },
+      "bit_exact": true
+    },
+    {
+      "sample": "IDC gtex DICOM-WSI 5 instances",
+      "format": "dicom-wsi",
+      "source_mb": 40.02,
+      "variants": {
+        "zstd_L5": 8.42,
+        "zstd_L1": 9.22,
+        "zstd_L3": 9.23,
+        "zstd_L9": 8.24
+      },
+      "readers": {
+        "wsidicom": [
+          1191.0,
+          0.604
+        ],
+        "zstd_L5": [
+          563.9,
+          0.286
+        ],
+        "zstd_L1": [
+          511.2,
+          0.259
+        ],
+        "zstd_L3": [
+          522.0,
+          0.265
+        ],
+        "zstd_L9": [
+          649.1,
+          0.329
+        ]
+      },
+      "tiles_identical": true
+    }
+  ],
+  "samples": {
+    "slides": "OpenSlide public test data (https://openslide.org/demo/): CMU-1.svs, JP2K-33003-1.svs, CMU-1.ndpi, Leica-1.scn, generic-CMU-1.tiff, Philips-1.tiff, CMU-1.mrxs",
+    "nifti": "OpenNeuro ds000114 sub-01 ses-test T1w (CC0)",
+    "dicom": "NCI Imaging Data Commons, CC BY 4.0: an NLST CT series, a 192-slice MR series, a GTEx whole-slide series"
+  },
+  "what_is_proven": [
+    "Round trips are exact: slide tiles identical to the native reader; NIfTI, CT and MR slices bit-identical.",
+    ".omnia reads are 17-35x faster single-threaded than pydicom, and ~1000x faster than slicing a gzip NIfTI.",
+    "With 4 data workers .omnia kept the GPU 2.6-4.5x busier than openslide on SVS (JPEG), Leica SCN and MIRAX.",
+    "Higher zstd levels do not speed reads; level 5 is within 1-3% of level 9 on size at a third of the write time.",
+    "Putting 16 tiles in one compressed block made shuffled reads 6-14x slower and saved no space."
+  ],
+  "what_is_not_proven": [
+    "Faster training in general: NDPI is a tie, JPEG 2000 is 1.0-1.5x, DICOM CT/MR training is a tie, DICOM whole-slide was slower (57 tiles).",
+    "That JPEG re-encoding does not hurt model accuracy: only PSNR and ResNet-18 feature similarity (0.96-0.99) were measured.",
+    "Anything on other GPUs, other models, 8+ workers (measured only in run 1), or datasets larger than a few thousand tiles.",
+    "Lossless size: for already-compressed slides .omnia zstd is often larger than the source (NDPI 519 vs 198 MB)."
+  ],
+  "caveats": [
+    "Two runs, up to 2x apart on single rows (different hosts). Treat gaps under ~30% as ties.",
+    "One GPU model and one network. Public sample slides only; no patient data.",
+    "Slide containers keep the second pyramid level and below, so slide sizes are not like-for-like with the source file."
+  ]
+}
