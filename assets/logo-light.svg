@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 84" width="300" height="84" role="img" aria-label="omnia-sdk">
+<style>text{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}</style>
+<rect x="10.0" y="10.0" width="17.9" height="17.9" rx="3.9" fill="#5b3fa8"/><rect x="33.0" y="10.0" width="17.9" height="17.9" rx="3.9" fill="#8d74d6"/><rect x="56.1" y="10.0" width="17.9" height="17.9" rx="3.9" fill="#5b3fa8"/><rect x="10.0" y="33.0" width="17.9" height="17.9" rx="3.9" fill="#8d74d6"/><rect x="56.1" y="33.0" width="17.9" height="17.9" rx="3.9" fill="#8d74d6"/><rect x="10.0" y="56.1" width="17.9" height="17.9" rx="3.9" fill="#5b3fa8"/><rect x="33.0" y="56.1" width="17.9" height="17.9" rx="3.9" fill="#8d74d6"/><rect x="56.1" y="56.1" width="17.9" height="17.9" rx="3.9" fill="#5b3fa8"/>
+<text x="92" y="56" font-size="40" font-weight="700" letter-spacing="-1" fill="#1b1d2a">omnia</text>
+<text x="218" y="56" font-size="40" font-weight="300" letter-spacing="-1" fill="#6a6f85">sdk</text>
+</svg>

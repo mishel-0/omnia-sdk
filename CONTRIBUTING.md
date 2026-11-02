@@ -28,4 +28,4 @@ pytest
 ## Pull requests
 
 Keep them small and focused, describe what you measured, and make sure `pytest` passes.
-If you change the README charts, regenerate them with `python assets/make_readme_art.py`.
+If you change the README charts, regenerate them with `python assets/make_readme_art.py` and `python assets/make_brand.py`.

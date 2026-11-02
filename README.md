@@ -1,7 +1,12 @@
-<h1 align="center">omnia-sdk</h1>
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
+    <img src="assets/logo-light.svg" alt="omnia-sdk" width="300">
+  </picture>
+</p>
 
 <p align="center">
-  <b>Train on medical images faster.</b><br/>
+  <b>A training-oriented container for medical images.</b><br/>
   Convert whole-slide images, DICOM and NIfTI to one <code>.omnia</code> file and feed PyTorch from it.
 </p>
 
@@ -13,22 +18,21 @@
 </p>
 
 <p align="center">
+  <a href="#why-omnia">Why</a> ·
   <a href="#quick-start">Quick start</a> ·
+  <a href="#how-it-works">How it works</a> ·
   <a href="#benchmarks">Benchmarks</a> ·
+  <a href="#compared-with-other-formats">Comparison</a> ·
   <a href="#supported-formats">Formats</a> ·
   <a href="#command-line">CLI</a> ·
   <a href="#python-api">Python API</a> ·
-  <a href="#how-it-works">How it works</a> ·
   <a href="#roadmap">Roadmap</a> ·
   <a href="#contributing">Contributing</a>
 </p>
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/race-dark.svg">
-  <img src="assets/race-light.svg" alt="Training throughput per format, original file vs .omnia" width="100%">
-</picture>
-
 ---
+
+## Why omnia
 
 Medical images are stored for viewing, not for training. A whole-slide image is a JPEG or JPEG 2000 pyramid
 that has to be decoded tile by tile; a CT scan is hundreds of DICOM files; an MRI is a gzip stream you cannot
@@ -115,11 +119,36 @@ for tiles, labels in loader:
     ...
 ```
 
+## How it works
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/how-it-works-dark.svg">
+  <img src="assets/how-it-works-light.svg" alt="Reading tiles from the original slide vs from .omnia, with GPU utilisation" width="100%">
+</picture>
+
+Convert once; every later epoch reads tiles by address instead of decoding them again.
+
+```
+.omnia
+├── header         magic, version
+├── metadata       zstd-compressed JSON: levels, tile grid, dtype, source, volume info
+└── blocks         [crc32][compressed tile] × N   (O(1) seek by tile index)
+```
+
+- **Slides** keep their pyramid levels and tile grid, so tile *i* at level *l* is one seek and one decompress.
+- **Volumes** store one block per 2D slice in the scan's own dtype (no rescaling), with spacing and rescale values in the metadata.
+- **Codecs:** zstd (lossless, default) or JPEG (lossy). One tile per block by default: packing 16 tiles into a block saved no space and made shuffled reads 6–14× slower ([`docs/CODECS.md`](docs/CODECS.md)).
+
 ## Benchmarks
 
 Same training loop, same GPU; only the file format changes. NVIDIA A40 (48 GB), 9 vCPU, ResNet-18 with mixed
 precision, batch 64, 4 DataLoader workers, shuffled tiles. Public sample data (OpenSlide test slides, an OpenNeuro MRI,
 NCI Imaging Data Commons DICOM).
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/race-dark.svg">
+  <img src="assets/race-light.svg" alt="Training throughput per format, original file vs .omnia" width="100%">
+</picture>
 
 ### Training time
 
@@ -165,6 +194,29 @@ Reproduce on your machine:
 omnia benchmark formats slide.svs scan.nii.gz ct_series/
 ```
 
+## Compared with other formats
+
+[MLArray](https://github.com/MIC-DKFZ/mlarray) (Blosc2) is the closest alternative, so it is in the benchmark. Same RTX 4090,
+same ResNet-18 loop, lossless on both sides, items per second ([raw data](benchmarks/mlarray_results_rtx4090.json)):
+
+| Data | | Single-thread read | Training, 1 worker | Training, 4 workers |
+|---|---|---:|---:|---:|
+| SVS, JPEG (CMU-1) | `.omnia` | **8,656** | **3,885** | 4,677 |
+| | MLArray, 1 tile per chunk | 4,183 | 2,602 | 4,676 |
+| | MLArray, defaults | 469 | 445 | 1,953 |
+| NIfTI MRI | `.omnia` | **48,413** | 5,752 | 5,764 |
+| | MLArray, 1 tile per chunk | 30,331 | 5,739 | 5,762 |
+| | MLArray, defaults | 4,372 | 3,463 | 5,764 |
+| DICOM CT | `.omnia` | **49,488** | 1,613 | 3,546 |
+| | MLArray, 1 tile per chunk | 12,980 | 1,543 | 3,549 |
+| | MLArray, defaults | 848 | 587 | 3,100 |
+
+- MLArray tuned to one tile per chunk trains as fast as `.omnia` once the GPU is the limit. Its defaults do not.
+- `.omnia` reads directly from SVS, NDPI, MRXS, SCN, DICOM and NIfTI and keeps the slide pyramid. MLArray stores arrays you prepare yourself.
+- Slide `.mla` files hold only the benchmark tiles, so file sizes are not comparable for slides.
+
+Reproduce: `omnia benchmark formats <files> --compare mlarray` (needs `pip install "omnia-sdk[benchmark,mlarray]"`).
+
 ## Supported formats
 
 | Input | Extensions | Reader | Round trip |
@@ -208,19 +260,6 @@ with omnia_sdk.OmniaContainer("slide.omnia") as c:   # random access
 ds = omnia_sdk.OmniaDataset("cohort/", cache_mode="mmap")      # "ram", "mmap" or "none"
 ds = omnia_sdk.ManifestOmniaDataset("cohort/", "labels.csv")   # one item per slide, labels from a CSV
 ```
-
-## How it works
-
-```
-.omnia
-├── header         magic, version
-├── metadata       zstd-compressed JSON: levels, tile grid, dtype, source, volume info
-└── blocks         [crc32][compressed tile] × N   (O(1) seek by tile index)
-```
-
-- **Slides** keep their pyramid levels and tile grid, so tile *i* at level *l* is one seek and one decompress.
-- **Volumes** store one block per 2D slice in the scan's own dtype (no rescaling), with spacing and rescale values in the metadata.
-- **Codecs:** zstd (lossless, default) or JPEG (lossy). One tile per block by default: packing 16 tiles into a block saved no space and made shuffled reads 6–14× slower ([`docs/CODECS.md`](docs/CODECS.md)).
 
 ## Roadmap
 
