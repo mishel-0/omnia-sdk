@@ -1,0 +1,335 @@
+{
+  "environment": {
+    "python": "3.12.3",
+    "machine": "Linux-6.8.0-138-generic-x86_64-with-glibc2.39",
+    "cpus": 32,
+    "device": "NVIDIA GeForce RTX 4090",
+    "torch": "2.8.0+cu128",
+    "batch": 64,
+    "workers": [
+      1,
+      4
+    ],
+    "model": "ResNet-18, AMP, channels_last",
+    "mlarray": "0.0.54",
+    "blosc2": "4.14.1",
+    "numpy": "2.1.2",
+    "nibabel": "5.4.2",
+    "pydicom": "3.0.2",
+    "openslide": "1.4.7",
+    "zstandard": "0.25.0",
+    "PIL": "11.0.0"
+  },
+  "results": [
+    {
+      "sample": "JP2K-33003-1.svs",
+      "format": "whole-slide",
+      "note": "OpenSlide test data, Aperio JPEG 2000",
+      "source_mb": 63.85,
+      "variants": [
+        {
+          "variant": "omnia",
+          "convert_s": 1.89,
+          "omnia_mb": 27.11
+        },
+        {
+          "variant": "omnia_jpeg_q90",
+          "convert_s": 1.58,
+          "omnia_mb": 4.95
+        }
+      ],
+      "mlarray": [
+        {
+          "variant": "mlarray (defaults)",
+          "convert_s": 0.07,
+          "mla_mb": 21.69,
+          "lossless": true
+        },
+        {
+          "variant": "mlarray (1 item per chunk)",
+          "convert_s": 0.19,
+          "mla_mb": 20.41,
+          "lossless": true
+        }
+      ],
+      "gpu_ceiling_items_s": 5026.8,
+      "tiles_identical_to_native": true,
+      "readers": [
+        {
+          "reader": "openslide read_region",
+          "items": 141,
+          "decode_1t_items_s": 202.6,
+          "train_w1_items_s": 176.0,
+          "gpu_share_w1": 0.035,
+          "train_w4_items_s": 3795.5,
+          "gpu_share_w4": 0.755
+        },
+        {
+          "reader": "omnia",
+          "items": 141,
+          "decode_1t_items_s": 6772.0,
+          "train_w1_items_s": 3307.8,
+          "gpu_share_w1": 0.658,
+          "train_w4_items_s": 3793.9,
+          "gpu_share_w4": 0.755
+        },
+        {
+          "reader": "omnia_jpeg_q90",
+          "items": 141,
+          "decode_1t_items_s": 2983.6,
+          "train_w1_items_s": 2147.1,
+          "gpu_share_w1": 0.427,
+          "train_w4_items_s": 3794.5,
+          "gpu_share_w4": 0.755
+        },
+        {
+          "reader": "mlarray (defaults)",
+          "items": 141,
+          "decode_1t_items_s": 404.8,
+          "train_w1_items_s": 414.3,
+          "gpu_share_w1": 0.082,
+          "train_w4_items_s": 3796.3,
+          "gpu_share_w4": 0.755
+        },
+        {
+          "reader": "mlarray (1 item per chunk)",
+          "items": 141,
+          "decode_1t_items_s": 3484.7,
+          "train_w1_items_s": 2306.2,
+          "gpu_share_w1": 0.459,
+          "train_w4_items_s": 3848.9,
+          "gpu_share_w4": 0.766
+        }
+      ]
+    },
+    {
+      "sample": "CMU-1.svs",
+      "format": "whole-slide",
+      "note": "OpenSlide test data, Aperio JPEG",
+      "source_mb": 177.55,
+      "variants": [
+        {
+          "variant": "omnia",
+          "convert_s": 5.97,
+          "omnia_mb": 60.25
+        },
+        {
+          "variant": "omnia_jpeg_q90",
+          "convert_s": 5.76,
+          "omnia_mb": 12.43
+        }
+      ],
+      "mlarray": [
+        {
+          "variant": "mlarray (defaults)",
+          "convert_s": 0.16,
+          "mla_mb": 56.47,
+          "lossless": true
+        },
+        {
+          "variant": "mlarray (1 item per chunk)",
+          "convert_s": 0.41,
+          "mla_mb": 55.71,
+          "lossless": true
+        }
+      ],
+      "gpu_ceiling_items_s": 5026.7,
+      "tiles_identical_to_native": true,
+      "readers": [
+        {
+          "reader": "openslide read_region",
+          "items": 381,
+          "decode_1t_items_s": 239.2,
+          "train_w1_items_s": 224.2,
+          "gpu_share_w1": 0.045,
+          "train_w4_items_s": 924.2,
+          "gpu_share_w4": 0.184
+        },
+        {
+          "reader": "omnia",
+          "items": 381,
+          "decode_1t_items_s": 8656.0,
+          "train_w1_items_s": 3885.1,
+          "gpu_share_w1": 0.773,
+          "train_w4_items_s": 4676.7,
+          "gpu_share_w4": 0.93
+        },
+        {
+          "reader": "omnia_jpeg_q90",
+          "items": 381,
+          "decode_1t_items_s": 3225.6,
+          "train_w1_items_s": 2086.8,
+          "gpu_share_w1": 0.415,
+          "train_w4_items_s": 4672.7,
+          "gpu_share_w4": 0.93
+        },
+        {
+          "reader": "mlarray (defaults)",
+          "items": 381,
+          "decode_1t_items_s": 468.5,
+          "train_w1_items_s": 445.0,
+          "gpu_share_w1": 0.089,
+          "train_w4_items_s": 1952.8,
+          "gpu_share_w4": 0.388
+        },
+        {
+          "reader": "mlarray (1 item per chunk)",
+          "items": 381,
+          "decode_1t_items_s": 4183.2,
+          "train_w1_items_s": 2602.2,
+          "gpu_share_w1": 0.518,
+          "train_w4_items_s": 4676.4,
+          "gpu_share_w4": 0.93
+        }
+      ]
+    },
+    {
+      "sample": "mri-t1w.nii.gz",
+      "format": "nifti",
+      "note": "OpenNeuro ds000114 sub-01 T1w",
+      "source_mb": 8.68,
+      "variants": [
+        {
+          "variant": "omnia",
+          "convert_s": 0.25,
+          "omnia_mb": 7.7
+        }
+      ],
+      "mlarray": [
+        {
+          "variant": "mlarray (defaults)",
+          "convert_s": 0.05,
+          "mla_mb": 7.34,
+          "lossless": true
+        },
+        {
+          "variant": "mlarray (1 item per chunk)",
+          "convert_s": 0.28,
+          "mla_mb": 7.64,
+          "lossless": true
+        }
+      ],
+      "gpu_ceiling_items_s": 6208.1,
+      "bit_exact": true,
+      "readers": [
+        {
+          "reader": "nibabel (slice from .nii.gz)",
+          "items": 256,
+          "decode_1t_items_s": 27.3,
+          "train_w1_items_s": 27.4,
+          "gpu_share_w1": 0.004,
+          "train_w4_items_s": 2990.1,
+          "gpu_share_w4": 0.482
+        },
+        {
+          "reader": "nibabel (volume in RAM)",
+          "items": 256,
+          "decode_1t_items_s": 6602801.0,
+          "train_w1_items_s": 5338.6,
+          "gpu_share_w1": 0.86,
+          "train_w4_items_s": 5764.1,
+          "gpu_share_w4": 0.928
+        },
+        {
+          "reader": "omnia",
+          "items": 256,
+          "decode_1t_items_s": 48413.1,
+          "train_w1_items_s": 5752.4,
+          "gpu_share_w1": 0.927,
+          "train_w4_items_s": 5764.0,
+          "gpu_share_w4": 0.928
+        },
+        {
+          "reader": "mlarray (defaults)",
+          "items": 256,
+          "decode_1t_items_s": 4372.2,
+          "train_w1_items_s": 3463.4,
+          "gpu_share_w1": 0.558,
+          "train_w4_items_s": 5764.1,
+          "gpu_share_w4": 0.928
+        },
+        {
+          "reader": "mlarray (1 item per chunk)",
+          "items": 256,
+          "decode_1t_items_s": 30330.6,
+          "train_w1_items_s": 5739.3,
+          "gpu_share_w1": 0.924,
+          "train_w4_items_s": 5761.6,
+          "gpu_share_w4": 0.928
+        }
+      ]
+    },
+    {
+      "sample": "1.2.840.113654.2.55.175834779263941692151061680512301876227",
+      "format": "dicom-series",
+      "note": "IDC CT, CC BY 4.0",
+      "source_mb": 60.0,
+      "variants": [
+        {
+          "variant": "omnia",
+          "convert_s": 0.42,
+          "omnia_mb": 22.52
+        }
+      ],
+      "mlarray": [
+        {
+          "variant": "mlarray (defaults)",
+          "convert_s": 0.1,
+          "mla_mb": 21.84,
+          "lossless": true
+        },
+        {
+          "variant": "mlarray (1 item per chunk)",
+          "convert_s": 0.14,
+          "mla_mb": 21.99,
+          "lossless": true
+        }
+      ],
+      "gpu_ceiling_items_s": 5951.4,
+      "bit_exact": true,
+      "readers": [
+        {
+          "reader": "pydicom (one file per slice)",
+          "items": 114,
+          "decode_1t_items_s": 1999.7,
+          "train_w1_items_s": 911.9,
+          "gpu_share_w1": 0.153,
+          "train_w4_items_s": 2647.1,
+          "gpu_share_w4": 0.445
+        },
+        {
+          "reader": "omnia",
+          "items": 114,
+          "decode_1t_items_s": 49488.3,
+          "train_w1_items_s": 1612.9,
+          "gpu_share_w1": 0.271,
+          "train_w4_items_s": 3545.9,
+          "gpu_share_w4": 0.596
+        },
+        {
+          "reader": "mlarray (defaults)",
+          "items": 114,
+          "decode_1t_items_s": 847.6,
+          "train_w1_items_s": 586.8,
+          "gpu_share_w1": 0.099,
+          "train_w4_items_s": 3100.0,
+          "gpu_share_w4": 0.521
+        },
+        {
+          "reader": "mlarray (1 item per chunk)",
+          "items": 114,
+          "decode_1t_items_s": 12980.0,
+          "train_w1_items_s": 1542.8,
+          "gpu_share_w1": 0.259,
+          "train_w4_items_s": 3549.2,
+          "gpu_share_w4": 0.596
+        }
+      ]
+    }
+  ],
+  "caveats": [
+    "Sizes: .omnia files hold the whole slide (all stored levels); the .mla files hold only the benchmark tiles, so slide sizes are not comparable. For NIfTI and CT both hold the full volume.",
+    "Conversion time for .mla starts from already-decoded tiles; .omnia conversion includes decoding the source.",
+    "MLArray has no pyramid/tile index, so slide tiles were stored as an N x 256 x 256 x 3 stack."
+  ]
+}

@@ -45,6 +45,7 @@ all = ["openslide-python>=1.4.0", "openslide-bin>=4.0.0", "Pillow>=10.0.0", "pyd
        "pylibjpeg>=2.0", "pylibjpeg-libjpeg>=2.1", "pylibjpeg-openjpeg>=2.3", "nibabel>=5.0.0"]
 train = ["torch>=2.0.0"]
 benchmark = ["torch>=2.0.0", "torchvision>=0.15.0"]
+mlarray = ["mlarray>=0.0.54"]
 dev = ["pytest>=7.0.0"]
 
 [project.scripts]

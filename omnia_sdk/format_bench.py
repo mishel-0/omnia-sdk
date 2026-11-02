@@ -102,6 +102,36 @@ class WsiDicomTiles:
         return np.asarray(self.s.read_tile(self.level_id, (i % self.tx, i // self.tx)).convert("RGB"))
 
 
+class MlaTiles:        # the same items, stacked along axis 0 in an MLArray (Blosc2) file
+    def __init__(self, path):
+        self.path, self.m = path, None
+    def get(self, i):
+        if self.m is None:
+            from mlarray import MLArray
+            self.m = MLArray.open(str(self.path), mmap_mode="r")
+        return np.asarray(self.m[i])
+
+
+def write_mla(items, idx, work):
+    """Write the benchmark items to .mla twice: MLArray defaults, and one item per chunk
+    (the layout .omnia uses). Returns [(name, path, convert_s, mb)]."""
+    from mlarray import MLArray
+    stack = np.stack([items.get(j) for j in range(len(idx))])
+    one = (1,) + stack.shape[1:]
+    blk = (1,) + tuple(min(d, 128) for d in stack.shape[1:3]) + stack.shape[3:]
+    out = []
+    for name, kw in (("mlarray (defaults)", {}),
+                     ("mlarray (1 item per chunk)", {"patch_size": None, "chunk_size": one, "block_size": blk})):
+        p = work / ("mla_default.mla" if not kw else "mla_chunk1.mla")
+        t = time.perf_counter()
+        MLArray(stack, **kw).save(str(p))
+        sec = time.perf_counter() - t
+        m = MLArray.open(str(p), mmap_mode="r")
+        exact = all(np.array_equal(np.asarray(m[k]), stack[k]) for k in (0, len(stack) // 2, len(stack) - 1))
+        out.append((name, p, round(sec, 2), round(p.stat().st_size / 1e6, 2), exact))
+    return out
+
+
 # ── GPU-side preparation ─────────────────────────────────────────────────
 
 def make_prep(kind, device):
@@ -194,7 +224,8 @@ def tissue_indices(container, n_max, seed=0):
     return keep
 
 
-def bench_one(path: Path, note: str, workers_list, batch, device, zstd_levels=(), zstd_max_mb=300):
+def bench_one(path: Path, note: str, workers_list, batch, device, zstd_levels=(), zstd_max_mb=300,
+              compare=()):
     fmt = detect_format(path)
     print(f"\n=== {path.name} ({fmt}) ===", flush=True)
     work = Path(tempfile.mkdtemp(prefix="omnia_fmt_"))
@@ -271,6 +302,13 @@ def bench_one(path: Path, note: str, workers_list, batch, device, zstd_levels=()
         cls = JpegReader if vname.endswith("jpeg_q90") else ZstdReader
         omnia_readers.append((vname, Items(cls(p), idx)))
 
+    if "mlarray" in compare:
+        res["mlarray"] = []
+        for name, p, sec, mb, exact in write_mla(fresh(omnia_readers[0][1]), idx, work):
+            res["mlarray"].append({"variant": name, "convert_s": sec, "mla_mb": mb, "lossless": exact})
+            print(f"{name}: {res['mlarray'][-1]}", flush=True)
+            omnia_readers.append((name, Items(MlaTiles(p), range(len(idx)))))
+
     ref = natives[0][1] if natives else omnia_readers[0][1]
     ceil = ceiling(ref, kind, batch, device)
     res["gpu_ceiling_items_s"] = round(ceil, 1)
@@ -304,6 +342,8 @@ def print_table(results, workers_list):
             print(f"  {v['variant']}: {v['omnia_mb']} MB, converted in {v['convert_s']} s")
         if "bit_exact" in r:
             print(f"  bit-exact vs native: {r['bit_exact']}")
+        for m in r.get("mlarray", []):
+            print(f"  {m['variant']}: {m['mla_mb']} MB, converted in {m['convert_s']} s, lossless {m['lossless']}")
         if "tiles_identical_to_native" in r:
             print(f"  tiles identical to native: {r['tiles_identical_to_native']}")
         print(f"  {'reader':34} {'decode/s':>9} " + " ".join(f"{'train w'+str(x):>10} {'GPU%':>5}" for x in workers_list))
@@ -323,6 +363,8 @@ def main(argv=None):
                     help="also convert with these zstd levels (the default variant is level 5)")
     ap.add_argument("--zstd-max-mb", type=float, default=300,
                     help="skip the extra zstd levels for samples larger than this (conversion time)")
+    ap.add_argument("--compare", nargs="*", default=[], choices=["mlarray"],
+                    help="also benchmark other container formats on the same items")
     ap.add_argument("--out", type=Path, default=Path("format_results.json"))
     args = ap.parse_args(argv)
 
@@ -334,7 +376,7 @@ def main(argv=None):
     env = {"python": platform.python_version(), "machine": platform.platform(), "cpus": cpus,
            "device": torch.cuda.get_device_name(0) if device == "cuda" else "cpu", "torch": torch.__version__,
            "batch": args.batch, "workers": workers, "model": "ResNet-18, AMP, channels_last"}
-    for mod in ("numpy", "nibabel", "pydicom", "openslide", "wsidicom", "zstandard", "PIL"):
+    for mod in ("mlarray", "blosc2", "numpy", "nibabel", "pydicom", "openslide", "wsidicom", "zstandard", "PIL"):
         try:
             env[mod] = getattr(__import__(mod), "__version__", "?")
         except Exception:
@@ -344,7 +386,8 @@ def main(argv=None):
     results = []
     for p, n in zip(args.samples, notes):
         try:
-            results.append(bench_one(p, n, workers, args.batch, device, args.zstd_levels, args.zstd_max_mb))
+            results.append(bench_one(p, n, workers, args.batch, device, args.zstd_levels, args.zstd_max_mb,
+                                     args.compare))
         except Exception as e:  # one failing format must not lose the others
             import traceback
             traceback.print_exc()
