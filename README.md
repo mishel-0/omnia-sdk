@@ -32,6 +32,11 @@
 
 ---
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/how-it-works-dark.svg">
+  <img src="assets/how-it-works-light.svg" alt="Reading tiles from the original slide vs from .omnia, with GPU utilisation" width="100%">
+</picture>
+
 ## Why omnia
 
 Medical images are stored for viewing, not for training. A whole-slide image is a JPEG or JPEG 2000 pyramid
@@ -121,12 +126,7 @@ for tiles, labels in loader:
 
 ## How it works
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/how-it-works-dark.svg">
-  <img src="assets/how-it-works-light.svg" alt="Reading tiles from the original slide vs from .omnia, with GPU utilisation" width="100%">
-</picture>
-
-Convert once; every later epoch reads tiles by address instead of decoding them again.
+Convert once; every later epoch reads tiles by address instead of decoding them again (animation at the top).
 
 ```
 .omnia
