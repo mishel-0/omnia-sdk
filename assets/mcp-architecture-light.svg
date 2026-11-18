@@ -1,126 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 320" width="960" height="320" role="img" aria-label="Omnia MCP stdio architecture connecting Claude, Codex, Cursor, and Antigravity">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 210" width="960" height="210" role="img" aria-label="Omnia MCP stdio connection">
 <style>
-text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
-.m { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
-@keyframes dash { 0% { stroke-dashoffset: 24; } 100% { stroke-dashoffset: 0; } }
-@keyframes move-tile {
+text { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+@keyframes dash { 0% { stroke-dashoffset: 16; } 100% { stroke-dashoffset: 0; } }
+@keyframes dot {
   0% { transform: translateX(0); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateX(200px); opacity: 0; }
+  15% { opacity: 1; }
+  85% { opacity: 1; }
+  100% { transform: translateX(78px); opacity: 0; }
 }
-.wire { stroke-dasharray: 4 6; animation: dash 1.5s linear infinite; }
-.tile { animation: move-tile 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.wire { stroke: #2a2f3d; stroke-width: 1; stroke-dasharray: 4 4; animation: dash 1s linear infinite; }
+.dot { animation: dot 2s linear infinite; fill: #a48cf0; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
 </style>
 
-<rect width="960" height="320" fill="#0d1117"/>
+<rect width="960" height="210" fill="#0d1117"/>
 
-<!-- Client Cards (Left) -->
-<!-- Claude -->
-<g transform="translate(40, 36)">
-  <rect width="180" height="52" rx="4" fill="#151a24" stroke="#2a2f3d"/>
-  <g transform="translate(14, 15) scale(0.9)" fill="#d97757">
+<!-- Top header label -->
+<text x="40" y="32" font-size="13" font-weight="700" fill="#e8e9f2">Model Context Protocol</text>
+<text x="240" y="32" font-size="12" fill="#8b90a8">stdio transport · zero overhead · spawns on demand</text>
+
+<!-- 1. Clients Block -->
+<rect x="40" y="52" width="180" height="116" rx="3" fill="#151a24" stroke="#2a2f3d"/>
+<text x="56" y="74" font-size="11" font-weight="700" fill="#8b90a8">CLIENTS</text>
+<line x1="40" y1="84" x2="220" y2="84" stroke="#2a2f3d"/>
+
+<!-- Claude item -->
+<g transform="translate(56, 94)">
+  <g transform="scale(0.8)" fill="#d97757">
     <path fill-rule="evenodd" d="M13.827 3.52h3.603L24 20h-3.603l-6.57-16.48zm-7.258 0h3.767L16.906 20h-3.674l-1.343-3.461H5.017l-1.344 3.46H0L6.57 3.522zm4.132 9.959L8.453 7.687 6.205 13.48H10.7z"/>
   </g>
-  <text x="48" y="26" font-size="13" font-weight="600" fill="#e8e9f2">Claude</text>
-  <text x="48" y="41" class="m" font-size="11" fill="#8b90a8">Desktop / Code</text>
+  <text x="26" y="14" font-size="12" fill="#e8e9f2">Claude</text>
+  <text x="146" y="14" text-anchor="end" font-size="11" fill="#8b90a8">desktop</text>
 </g>
 
-<!-- Codex -->
-<g transform="translate(40, 100)">
-  <rect width="180" height="52" rx="4" fill="#151a24" stroke="#2a2f3d"/>
-  <g transform="translate(14, 15) scale(0.9)" fill="#10a37f">
+<!-- Codex item -->
+<g transform="translate(56, 114)">
+  <g transform="scale(0.8)" fill="#10a37f">
     <path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.1686a.071.071 0 0 1 .038.052v5.5826a4.504 4.504 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.1685a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.872zm16.5963 3.8558L13.1038 8.364 15.1192 7.2a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.407-.667zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.1638a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813zm1.0976-2.3654l2.602-1.4998 2.6069 1.4998v2.9994l-2.5974 1.4997-2.6067-1.4997Z"/>
   </g>
-  <text x="48" y="26" font-size="13" font-weight="600" fill="#e8e9f2">Codex</text>
-  <text x="48" y="41" class="m" font-size="11" fill="#8b90a8">CLI / Agent</text>
+  <text x="26" y="14" font-size="12" fill="#e8e9f2">Codex</text>
+  <text x="146" y="14" text-anchor="end" font-size="11" fill="#8b90a8">cli</text>
 </g>
 
-<!-- Cursor -->
-<g transform="translate(40, 164)">
-  <rect width="180" height="52" rx="4" fill="#151a24" stroke="#2a2f3d"/>
-  <g transform="translate(14, 15) scale(0.042)" fill="#e8e9f2">
+<!-- Cursor item -->
+<g transform="translate(56, 134)">
+  <g transform="scale(0.035)" fill="#e8e9f2">
     <path d="M457.43 125.94 244.42 2.96a22.13 22.13 0 0 0-22.12 0L9.3 125.94C3.55 129.26 0 135.4 0 142.05v247.99c0 6.65 3.55 12.79 9.3 16.11l213.01 122.98a22.13 22.13 0 0 0 22.12 0l213.01-122.98c5.75-3.32 9.3-9.46 9.3-16.11V142.05c0-6.65-3.55-12.79-9.3-16.11zm-13.38 26.05L238.42 508.15c-1.39 2.4-5.06 1.42-5.06-1.36V273.58c0-4.66-2.49-8.97-6.53-11.31L24.87 145.67c-2.4-1.39-1.42-5.06 1.36-5.06h411.26c5.84 0 9.49 6.33 6.57 11.39h-.01Z"/>
   </g>
-  <text x="48" y="26" font-size="13" font-weight="600" fill="#e8e9f2">Cursor</text>
-  <text x="48" y="41" class="m" font-size="11" fill="#8b90a8">IDE</text>
+  <text x="26" y="14" font-size="12" fill="#e8e9f2">Cursor</text>
+  <text x="146" y="14" text-anchor="end" font-size="11" fill="#8b90a8">ide</text>
 </g>
 
-<!-- Antigravity -->
-<g transform="translate(40, 228)">
-  <rect width="180" height="52" rx="4" fill="#151a24" stroke="#2a2f3d"/>
-  <g transform="translate(14, 15)" fill="#4285f4">
+<!-- Antigravity item -->
+<g transform="translate(56, 154)">
+  <g transform="scale(0.7)" fill="#4285f4">
     <path d="M11 0C11 6.075 6.075 11 0 11c6.075 0 11 4.925 11 11 0-6.075 4.925-11 11-11-6.075 0-11-4.925-11-11z"/>
   </g>
-  <text x="48" y="26" font-size="13" font-weight="600" fill="#e8e9f2">Antigravity</text>
-  <text x="48" y="41" class="m" font-size="11" fill="#8b90a8">Workspace Agent</text>
+  <text x="26" y="14" font-size="12" fill="#e8e9f2">Antigravity</text>
+  <text x="146" y="14" text-anchor="end" font-size="11" fill="#8b90a8">agent</text>
 </g>
 
-<!-- Connecting Wires -->
-<g stroke="#2a2f3d" stroke-width="1.5" fill="none">
-  <path d="M 220 62 C 300 62, 300 160, 380 160" class="wire" stroke="#a48cf0"/>
-  <path d="M 220 126 C 290 126, 300 160, 380 160" class="wire" stroke="#a48cf0"/>
-  <path d="M 220 190 C 290 190, 300 160, 380 160" class="wire" stroke="#a48cf0"/>
-  <path d="M 220 254 C 300 254, 300 160, 380 160" class="wire" stroke="#a48cf0"/>
-</g>
+<!-- Wire 1: Clients -> Server -->
+<line x1="220" y1="110" x2="300" y2="110" class="wire"/>
+<circle cx="220" cy="110" r="3" class="dot"/>
 
-<!-- Data stream dots -->
-<g fill="#a48cf0">
-  <rect class="tile" style="animation-delay: 0.0s" x="220" y="58" width="8" height="8" rx="2"/>
-  <rect class="tile" style="animation-delay: 0.6s" x="220" y="122" width="8" height="8" rx="2"/>
-  <rect class="tile" style="animation-delay: 1.2s" x="220" y="186" width="8" height="8" rx="2"/>
-  <rect class="tile" style="animation-delay: 1.8s" x="220" y="250" width="8" height="8" rx="2"/>
-</g>
+<!-- 2. Server Block -->
+<rect x="300" y="52" width="280" height="116" rx="3" fill="#151a24" stroke="#2a2f3d"/>
+<text x="316" y="74" font-size="11" font-weight="700" fill="#8b90a8">OMNIA MCP SERVER</text>
+<text x="564" y="74" text-anchor="end" font-size="11" fill="#5fc59a">mcp_server.py</text>
+<line x1="300" y1="84" x2="580" y2="84" stroke="#2a2f3d"/>
 
-<!-- Center: MCP Server -->
-<g transform="translate(380, 56)">
-  <rect width="240" height="208" rx="6" fill="#151a24" stroke="#2a2f3d"/>
-  <text x="20" y="32" font-size="14" font-weight="700" fill="#e8e9f2">mcp_server.py</text>
-  <text x="20" y="50" class="m" font-size="11" fill="#8b90a8">transport: stdio</text>
+<text x="316" y="106" font-size="12" fill="#a48cf0">inspect_slide()</text>
+<text x="564" y="106" text-anchor="end" font-size="11" fill="#8b90a8">dimensions, levels, codec</text>
 
-  <line x1="20" y1="64" x2="220" y2="64" stroke="#2a2f3d"/>
+<text x="316" y="128" font-size="12" fill="#a48cf0">verify_slide_integrity()</text>
+<text x="564" y="128" text-anchor="end" font-size="11" fill="#8b90a8">per-block CRC32</text>
 
-  <text x="20" y="86" class="m" font-size="11" fill="#8b90a8">tools</text>
+<text x="316" y="150" font-size="12" fill="#a48cf0">get_sdk_status()</text>
+<text x="564" y="150" text-anchor="end" font-size="11" fill="#8b90a8">enabled converters</text>
 
-  <rect x="20" y="96" width="200" height="28" rx="3" fill="#0d1117" stroke="#2a2f3d"/>
-  <text x="30" y="115" class="m" font-size="12" fill="#e8e9f2">inspect_slide()</text>
+<!-- Wire 2: Server -> Target -->
+<line x1="580" y1="110" x2="660" y2="110" class="wire"/>
+<circle cx="580" cy="110" r="3" class="dot" style="animation-delay: 1s; fill: #5fc59a;"/>
 
-  <rect x="20" y="132" width="200" height="28" rx="3" fill="#0d1117" stroke="#2a2f3d"/>
-  <text x="30" y="151" class="m" font-size="12" fill="#e8e9f2">verify_slide_integrity()</text>
+<!-- 3. Target Block -->
+<rect x="660" y="52" width="260" height="116" rx="3" fill="#151a24" stroke="#2a2f3d"/>
+<text x="676" y="74" font-size="11" font-weight="700" fill="#8b90a8">WHOLE-SLIDE DATA</text>
+<text x="904" y="74" text-anchor="end" font-size="11" fill="#5fc59a">.omnia</text>
+<line x1="660" y1="84" x2="920" y2="84" stroke="#2a2f3d"/>
 
-  <rect x="20" y="168" width="200" height="28" rx="3" fill="#0d1117" stroke="#2a2f3d"/>
-  <text x="30" y="187" class="m" font-size="12" fill="#e8e9f2">get_sdk_status()</text>
-</g>
+<text x="676" y="106" font-size="12" fill="#e8e9f2">Direct tile seek</text>
+<text x="904" y="106" text-anchor="end" font-size="11" fill="#5fc59a">&lt; 0.2ms</text>
 
-<!-- Connecting Wires Right -->
-<g stroke="#2a2f3d" stroke-width="1.5" fill="none">
-  <path d="M 620 130 C 670 130, 670 110, 720 110" class="wire" stroke="#5fc59a"/>
-  <path d="M 620 190 C 670 190, 670 210, 720 210" class="wire" stroke="#5fc59a"/>
-</g>
+<text x="676" y="128" font-size="12" fill="#e8e9f2">PyTorch batching</text>
+<text x="904" y="128" text-anchor="end" font-size="11" fill="#8b90a8">DataLoader</text>
 
-<!-- Target: Slide File & PyTorch -->
-<g transform="translate(720, 56)">
-  <!-- .omnia file -->
-  <g transform="translate(0, 0)">
-    <rect width="200" height="96" rx="6" fill="#151a24" stroke="#2a2f3d"/>
-    <text x="18" y="28" font-size="13" font-weight="700" fill="#e8e9f2">slide.omnia</text>
-    <text x="18" y="46" class="m" font-size="11" fill="#8b90a8">zstd codec, per-tile CRC</text>
-    <line x1="18" y1="58" x2="182" y2="58" stroke="#2a2f3d"/>
-    <text x="18" y="76" class="m" font-size="11" fill="#5fc59a">seek: &lt;0.2ms zero-copy</text>
-  </g>
+<text x="676" y="150" font-size="12" fill="#e8e9f2">Supported inputs</text>
+<text x="904" y="150" text-anchor="end" font-size="11" fill="#8b90a8">SVS, DICOM, NIfTI</text>
 
-  <!-- PyTorch Dataset -->
-  <g transform="translate(0, 112)">
-    <rect width="200" height="96" rx="6" fill="#151a24" stroke="#2a2f3d"/>
-    <text x="18" y="28" font-size="13" font-weight="700" fill="#e8e9f2">Dataset / DataLoader</text>
-    <text x="18" y="46" class="m" font-size="11" fill="#8b90a8">PyTorch native batching</text>
-    <line x1="18" y1="58" x2="182" y2="58" stroke="#2a2f3d"/>
-    <text x="18" y="76" class="m" font-size="11" fill="#8b90a8">GPU util: 93% vs 18%</text>
-  </g>
-</g>
-
-<!-- Footer -->
-<text x="40" y="302" class="m" font-size="11" fill="#8b90a8">claude mcp add omnia-sdk uvx --from git+https://github.com/mishel-0/omnia-sdk.git mcp run mcp_server.py</text>
-
+<!-- Bottom command -->
+<text x="40" y="194" font-size="12" fill="#8b90a8">$ <tspan fill="#e8e9f2">claude mcp add omnia-sdk uvx --from git+https://github.com/mishel-0/omnia-sdk.git mcp run mcp_server.py</tspan></text>
 </svg>
