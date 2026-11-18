@@ -102,8 +102,8 @@ pip install "omnia-sdk[all] @ https://github.com/mishel-0/omnia-sdk/archive/refs
 Omnia SDK runs as a Model Context Protocol server over stdio. AI assistants and coding agents (Claude, Codex, Cursor, Antigravity) can inspect `.omnia` slide containers, verify CRC32 block checksums, and read format metadata directly.
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="assets/mcp-architecture-dark.svg?v=4">
-  <img src="assets/mcp-architecture-light.svg?v=4" alt="Omnia MCP stdio architecture with Claude, Codex, Cursor, and Antigravity" width="100%">
+  <source media="(prefers-color-scheme: dark)" srcset="assets/mcp-architecture-dark.svg?v=5">
+  <img src="assets/mcp-architecture-light.svg?v=5" alt="Omnia MCP architecture with Claude, Codex, Cursor, and Antigravity" width="100%">
 </picture>
 
 ### Connect (Claude Code / Codex CLI)
