@@ -22,6 +22,7 @@
   <a href="#quick-start">Quick start</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#benchmarks">Benchmarks</a> ·
+  <a href="#model-context-protocol-mcp">MCP for AI</a> ·
   <a href="#compared-with-other-formats">Comparison</a> ·
   <a href="#supported-formats">Formats</a> ·
   <a href="#command-line">CLI</a> ·
@@ -93,6 +94,49 @@ pip install "omnia-sdk[all] @ https://github.com/mishel-0/omnia-sdk/archive/refs
 #   add ,train      for the PyTorch dataset
 #   add ,benchmark  for `omnia benchmark` and `omnia recommend`
 ```
+
+---
+
+## Model Context Protocol (MCP)
+
+Omnia SDK includes a native [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server. Any AI assistant or agent — including **Claude Desktop / Claude Code, Codex, Cursor, Antigravity, and custom LLM workflows** — can directly inspect whole-slide pyramids, verify CRC32 container checksums, and stream slide data without manual setup.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/mcp-architecture-dark.svg">
+  <img src="assets/mcp-architecture-light.svg" alt="Omnia Model Context Protocol (MCP) Architecture connecting Claude, Codex, Cursor, and Antigravity" width="100%">
+</picture>
+
+### 1-Line Connection (Claude Code / Codex)
+
+```bash
+claude mcp add omnia-sdk uvx --from git+https://github.com/mishel-0/omnia-sdk.git mcp run mcp_server.py
+```
+
+### IDE Configuration (Claude Desktop / Cursor)
+
+Add to your `claude_desktop_config.json` or `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "omnia-sdk": {
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/mishel-0/omnia-sdk.git",
+        "mcp",
+        "run",
+        "mcp_server.py"
+      ]
+    }
+  }
+}
+```
+
+### Available MCP Tools
+- **`inspect_slide(slide_path)`**: Returns dimensions, tile size, levels, format, and compression.
+- **`verify_slide_integrity(slide_path)`**: Fast block-level CRC32 checksum verification.
+- **`get_sdk_status()`**: Returns active SDK capabilities and format converters.
 
 ### 2. Check your machine
 

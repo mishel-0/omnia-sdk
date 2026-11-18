@@ -1,0 +1,224 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 420" width="960" height="420" role="img" aria-label="Omnia Model Context Protocol (MCP) Architecture for AI Agents">
+<defs>
+  <linearGradient id="grad-omnia" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#5fc59a"/>
+    <stop offset="100%" stop-color="#3aa97b"/>
+  </linearGradient>
+  <linearGradient id="grad-mcp" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#7c65f6"/>
+    <stop offset="100%" stop-color="#a48cf0"/>
+  </linearGradient>
+  <linearGradient id="grad-client" x1="0%" y1="0%" x2="100%" y2="100%">
+    <stop offset="0%" stop-color="#2d3348"/>
+    <stop offset="100%" stop-color="#1d2230"/>
+  </linearGradient>
+  <filter id="glow-purple" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="6" result="blur"/>
+    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+  </filter>
+  <filter id="glow-green" x="-20%" y="-20%" width="140%" height="140%">
+    <feGaussianBlur stdDeviation="6" result="blur"/>
+    <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+  </filter>
+</defs>
+
+<style>
+text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.85; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.02); }
+}
+
+@keyframes flow-in {
+  0% { stroke-dashoffset: 60; opacity: 0.3; }
+  50% { opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0.3; }
+}
+
+@keyframes packet-left {
+  0% { transform: translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(170px); opacity: 0; }
+}
+
+@keyframes packet-right {
+  0% { transform: translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(170px); opacity: 0; }
+}
+
+@keyframes packet-return {
+  0% { transform: translateX(0); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateX(-170px); opacity: 0; }
+}
+
+.wire {
+  stroke-dasharray: 6 8;
+  animation: flow-in 3s linear infinite;
+}
+
+.p-left { animation: packet-left 2.6s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.p-right { animation: packet-right 2.6s cubic-bezier(0.4, 0, 0.2, 1) 0.6s infinite; }
+.p-ret { animation: packet-return 2.6s cubic-bezier(0.4, 0, 0.2, 1) 1.4s infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; }
+}
+</style>
+
+<!-- Background -->
+<rect width="960" height="420" rx="12" fill="#0d1117" stroke="#21262d" stroke-width="1.5"/>
+
+<!-- Title Header -->
+<g transform="translate(40, 36)">
+  <rect x="0" y="0" width="68" height="22" rx="11" fill="rgba(124, 101, 246, 0.15)" stroke="#7c65f6" stroke-width="1"/>
+  <text x="34" y="15" text-anchor="middle" class="mono" font-size="11" font-weight="700" fill="#a48cf0">MCP 1.0</text>
+  <text x="80" y="16" font-size="16" font-weight="700" fill="#f0f6fc">Model Context Protocol • Universal AI Connector</text>
+  <text x="80" y="34" font-size="12" fill="#8b949e">Any AI agent can query slide metadata, verify CRC checksums, and stream whole-slide tensors</text>
+</g>
+
+<!-- ================= AI CLIENTS COLUMN (LEFT) ================= -->
+<g id="clients-col" transform="translate(40, 95)">
+  <text x="0" y="0" font-size="11" font-weight="700" class="mono" fill="#8b949e" letter-spacing="1">AI AGENTS &amp; CLIENTS</text>
+
+  <!-- Claude Card -->
+  <g transform="translate(0, 16)">
+    <rect width="180" height="54" rx="8" fill="url(#grad-client)" stroke="#30363d" stroke-width="1.2"/>
+    <circle cx="28" cy="27" r="14" fill="#cc785c" fill-opacity="0.2" stroke="#cc785c"/>
+    <text x="28" y="32" text-anchor="middle" font-size="13" font-weight="700" fill="#f08c65">C</text>
+    <text x="52" y="26" font-size="13" font-weight="600" fill="#f0f6fc">Claude</text>
+    <text x="52" y="42" font-size="11" class="mono" fill="#8b949e">Desktop &amp; Code</text>
+  </g>
+
+  <!-- Codex Card -->
+  <g transform="translate(0, 80)">
+    <rect width="180" height="54" rx="8" fill="url(#grad-client)" stroke="#30363d" stroke-width="1.2"/>
+    <circle cx="28" cy="27" r="14" fill="#10a37f" fill-opacity="0.2" stroke="#10a37f"/>
+    <text x="28" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="#10a37f">CX</text>
+    <text x="52" y="26" font-size="13" font-weight="600" fill="#f0f6fc">Codex</text>
+    <text x="52" y="42" font-size="11" class="mono" fill="#8b949e">Agents &amp; CLI</text>
+  </g>
+
+  <!-- Cursor Card -->
+  <g transform="translate(0, 144)">
+    <rect width="180" height="54" rx="8" fill="url(#grad-client)" stroke="#30363d" stroke-width="1.2"/>
+    <circle cx="28" cy="27" r="14" fill="#007acc" fill-opacity="0.2" stroke="#007acc"/>
+    <text x="28" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="#388bfd">CR</text>
+    <text x="52" y="26" font-size="13" font-weight="600" fill="#f0f6fc">Cursor</text>
+    <text x="52" y="42" font-size="11" class="mono" fill="#8b949e">IDE Extension</text>
+  </g>
+
+  <!-- Antigravity / Any LLM Card -->
+  <g transform="translate(0, 208)">
+    <rect width="180" height="54" rx="8" fill="url(#grad-client)" stroke="#30363d" stroke-width="1.2"/>
+    <circle cx="28" cy="27" r="14" fill="#8957e5" fill-opacity="0.2" stroke="#a371f7"/>
+    <text x="28" y="32" text-anchor="middle" font-size="12" font-weight="700" fill="#bc8cff">AG</text>
+    <text x="52" y="26" font-size="13" font-weight="600" fill="#f0f6fc">Antigravity</text>
+    <text x="52" y="42" font-size="11" class="mono" fill="#8b949e">&amp; Any MCP Agent</text>
+  </g>
+</g>
+
+<!-- ================= CONNECTING WIRES (CLIENTS -> MCP) ================= -->
+<g stroke="#30363d" stroke-width="2" fill="none">
+  <path d="M 220 138 C 300 138, 300 236, 380 236" class="wire" stroke="#7c65f6"/>
+  <path d="M 220 202 C 290 202, 300 236, 380 236" class="wire" stroke="#7c65f6"/>
+  <path d="M 220 266 C 290 266, 300 236, 380 236" class="wire" stroke="#7c65f6"/>
+  <path d="M 220 330 C 300 330, 300 236, 380 236" class="wire" stroke="#7c65f6"/>
+</g>
+
+<!-- Moving Packets (Requests from Clients to MCP Server) -->
+<g fill="#a48cf0">
+  <circle cx="220" cy="138" r="4" class="p-left" filter="url(#glow-purple)"/>
+  <circle cx="220" cy="202" r="4" class="p-left" style="animation-delay: 0.4s" filter="url(#glow-purple)"/>
+  <circle cx="220" cy="266" r="4" class="p-left" style="animation-delay: 0.8s" filter="url(#glow-purple)"/>
+  <circle cx="220" cy="330" r="4" class="p-left" style="animation-delay: 1.2s" filter="url(#glow-purple)"/>
+</g>
+
+<!-- ================= CENTRAL MCP SERVER HUB ================= -->
+<g id="mcp-hub" transform="translate(380, 136)">
+  <!-- Glow Box -->
+  <rect width="200" height="200" rx="16" fill="#161b22" stroke="url(#grad-mcp)" stroke-width="2" filter="url(#glow-purple)" opacity="0.4"/>
+  <rect width="200" height="200" rx="16" fill="#161b22" stroke="url(#grad-mcp)" stroke-width="2"/>
+  
+  <rect x="20" y="20" width="160" height="28" rx="6" fill="#21262d"/>
+  <text x="100" y="38" text-anchor="middle" class="mono" font-size="12" font-weight="700" fill="#a48cf0">omnia-sdk MCP</text>
+
+  <!-- Protocol Badge -->
+  <g transform="translate(32, 60)">
+    <text x="0" y="14" class="mono" font-size="10" fill="#8b949e">TRANSPORT</text>
+    <text x="136" y="14" text-anchor="end" class="mono" font-size="10" font-weight="700" fill="#5fc59a">stdio / SSE</text>
+    <line x1="0" y1="22" x2="136" y2="22" stroke="#30363d"/>
+  </g>
+
+  <!-- Exposed Tools -->
+  <g transform="translate(24, 98)">
+    <text x="0" y="0" class="mono" font-size="9.5" fill="#8b949e">EXPOSED TOOLS:</text>
+    <g transform="translate(0, 10)">
+      <rect x="0" y="0" width="152" height="20" rx="4" fill="#0d1117" stroke="#30363d"/>
+      <text x="8" y="14" class="mono" font-size="10" fill="#e6edf3">inspect_slide()</text>
+    </g>
+    <g transform="translate(0, 34)">
+      <rect x="0" y="0" width="152" height="20" rx="4" fill="#0d1117" stroke="#30363d"/>
+      <text x="8" y="14" class="mono" font-size="10" fill="#e6edf3">verify_integrity()</text>
+    </g>
+    <g transform="translate(0, 58)">
+      <rect x="0" y="0" width="152" height="20" rx="4" fill="#0d1117" stroke="#30363d"/>
+      <text x="8" y="14" class="mono" font-size="10" fill="#e6edf3">get_sdk_status()</text>
+    </g>
+  </g>
+</g>
+
+<!-- ================= CONNECTING WIRES (MCP -> ENGINE) ================= -->
+<g stroke="#30363d" stroke-width="2" fill="none">
+  <path d="M 580 206 C 640 206, 660 178, 720 178" class="wire" stroke="#5fc59a"/>
+  <path d="M 580 266 C 640 266, 660 294, 720 294" class="wire" stroke="#5fc59a"/>
+</g>
+
+<!-- Packets flowing to Backend & Data -->
+<g fill="#5fc59a">
+  <circle cx="580" cy="206" r="4" class="p-right" filter="url(#glow-green)"/>
+  <circle cx="580" cy="266" r="4" class="p-right" style="animation-delay: 0.5s" filter="url(#glow-green)"/>
+  <circle cx="750" cy="206" r="4" class="p-ret" filter="url(#glow-purple)"/>
+</g>
+
+<!-- ================= TARGET SERVICES (RIGHT) ================= -->
+<g id="services-col" transform="translate(720, 115)">
+  <text x="0" y="0" font-size="11" font-weight="700" class="mono" fill="#8b949e" letter-spacing="1">OMNIA ENGINE &amp; FORMAT</text>
+
+  <!-- .omnia Slide Container -->
+  <g transform="translate(0, 18)">
+    <rect width="200" height="96" rx="10" fill="#161b22" stroke="#5fc59a" stroke-width="1.5"/>
+    <rect x="16" y="14" width="40" height="24" rx="4" fill="url(#grad-omnia)"/>
+    <text x="36" y="30" text-anchor="middle" class="mono" font-size="11" font-weight="800" fill="#0d1117">.omnia</text>
+    <text x="64" y="26" font-size="13" font-weight="700" fill="#f0f6fc">Native Slide</text>
+    <text x="64" y="42" font-size="10" class="mono" fill="#8b949e">Zstd • Zero-Copy</text>
+    
+    <line x1="16" y1="50" x2="184" y2="50" stroke="#30363d"/>
+    <text x="16" y="66" class="mono" font-size="10" fill="#8b949e">Tile Seek: &lt; 0.2ms</text>
+    <text x="16" y="82" class="mono" font-size="10" fill="#5fc59a">CRC32 Checksum Valid</text>
+  </g>
+
+  <!-- PyTorch / AI Pipeline -->
+  <g transform="translate(0, 134)">
+    <rect width="200" height="84" rx="10" fill="#161b22" stroke="#30363d" stroke-width="1.2"/>
+    <circle cx="32" cy="28" r="14" fill="#ee4c2c" fill-opacity="0.15" stroke="#ee4c2c"/>
+    <text x="32" y="33" text-anchor="middle" font-size="12" font-weight="700" fill="#ee4c2c">PT</text>
+    <text x="54" y="27" font-size="13" font-weight="700" fill="#f0f6fc">PyTorch Loader</text>
+    <text x="54" y="43" font-size="10" class="mono" fill="#8b949e">Multi-worker batching</text>
+
+    <text x="16" y="66" class="mono" font-size="10" fill="#8b949e">Speedup: 13.2x vs SVS</text>
+  </g>
+</g>
+
+<!-- Footer Bar -->
+<g transform="translate(40, 386)">
+  <text x="0" y="0" class="mono" font-size="11" fill="#8b949e">Connect in 1 line: <tspan fill="#a48cf0">claude mcp add omnia-sdk uvx --from git+https://github.com/mishel-0/omnia-sdk.git mcp run mcp_server.py</tspan></text>
+</g>
+
+</svg>
